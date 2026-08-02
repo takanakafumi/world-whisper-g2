@@ -7,6 +7,7 @@ import {
 } from '@evenrealities/even_hub_sdk'
 
 const bridge = await waitForEvenAppBridge()
+const releaseLabel = 'GESTURE TEST v0.2.0'
 let isShuttingDown = false
 let gestureCount = 0
 let pendingTextUpdate = Promise.resolve()

@@ -23,6 +23,8 @@ https://takanakafumi.github.io/world-whisper-g2/
 
 更新時はGitHub Actionsの `Deploy to GitHub Pages` が完了してから、Even Hubアプリで同じURLを読み直します。古い内容が表示される場合は、URLの末尾に `?v=<任意の番号>` を付けて再読み込みしてください。
 
+今回の操作確認版が読み込まれていれば、スマホ画面とG2画面の先頭に **`GESTURE TEST v0.2.0`** と表示されます。この表示がない場合は、GitHub Pagesのデプロイ完了を確認し、クエリ番号を変えて読み直してください。
+
 GitHub Pagesから読み込んだ場合も、実機のタッチ操作はEven Hubアプリのブリッジ経由でアプリへ届きます。公式SDKのイベント種別に合わせ、次の操作を確認できます。
 
 - シングルタップ (`CLICK_EVENT`): 検出した操作と操作回数を表示

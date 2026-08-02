@@ -6,11 +6,15 @@
     <title>World Whisper</title>
     <style>
       html, body { margin: 0; height: 100%; background: #232323; color: #e5e5e5; font: 14px/1.4 -apple-system, BlinkMacSystemFont, system-ui, sans-serif; touch-action: manipulation; -webkit-text-size-adjust: 100%; overscroll-behavior: none; }
-      #app { display: flex; height: 100%; align-items: center; justify-content: center; padding: 24px; box-sizing: border-box; text-align: center; }
+      #app { display: flex; height: 100%; flex-direction: column; gap: 12px; align-items: center; justify-content: center; padding: 24px; box-sizing: border-box; text-align: center; }
+      .release { border: 1px solid #e5e5e5; border-radius: 999px; padding: 4px 12px; font-weight: 700; letter-spacing: .08em; }
     </style>
   </head>
   <body>
-    <div id="app">World Whisper を起動しました。G2の表示を確認してください。</div>
+    <div id="app">
+      <div class="release">GESTURE TEST v0.2.0</div>
+      <div>操作確認画面に更新済みです。G2の表示を確認してください。</div>
+    </div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
