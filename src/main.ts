@@ -13,6 +13,7 @@ let gestureCount = 0
 let pendingTextUpdate = Promise.resolve()
 
 const initialContent = [
+  releaseLabel,
   'World Whisper',
   '',
   '操作を試してください',
