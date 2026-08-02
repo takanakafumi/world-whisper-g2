@@ -2,28 +2,89 @@ import {
   CreateStartUpPageContainer,
   OsEventTypeList,
   TextContainerProperty,
+  TextContainerUpgrade,
   waitForEvenAppBridge,
 } from '@evenrealities/even_hub_sdk'
 
 const bridge = await waitForEvenAppBridge()
 let isShuttingDown = false
+let gestureCount = 0
+let pendingTextUpdate = Promise.resolve()
+
+const initialContent = [
+  'World Whisper',
+  '',
+  '操作を試してください',
+  'タップ: 表示更新',
+  '上下スライド: 表示更新',
+  'ダブルタップ: 終了',
+].join('\n')
+
+const showGesture = (label: string) => {
+  gestureCount += 1
+  const content = [
+    'World Whisper',
+    '',
+    `検出: ${label}`,
+    `操作回数: ${gestureCount}`,
+    '',
+    'ダブルタップで終了',
+  ].join('\n')
+
+  // Keep rapid slide events in order instead of sending overlapping bridge requests.
+  pendingTextUpdate = pendingTextUpdate
+    .catch(() => undefined)
+    .then(async () => {
+      const didUpdate = await bridge.textContainerUpgrade(
+        new TextContainerUpgrade({
+          containerID: 1,
+          containerName: 'world-whisper',
+          contentOffset: 0,
+          contentLength: content.length,
+          content,
+        }),
+      )
+
+      if (!didUpdate) {
+        throw new Error('Failed to update the gesture display')
+      }
+    })
+}
 
 bridge.onEvenHubEvent((event) => {
-  if (event.textEvent?.eventType !== OsEventTypeList.DOUBLE_CLICK_EVENT || isShuttingDown) {
+  const eventType =
+    event.textEvent?.eventType ?? event.listEvent?.eventType ?? event.sysEvent?.eventType
+
+  if (isShuttingDown) {
     return
   }
 
-  isShuttingDown = true
-  void bridge
-    .shutDownPageContainer(0)
-    .then((didShutDown) => {
-      if (!didShutDown) {
-        isShuttingDown = false
-      }
-    })
-    .catch(() => {
-      isShuttingDown = false
-    })
+  switch (eventType) {
+    case OsEventTypeList.CLICK_EVENT:
+      showGesture('シングルタップ')
+      break
+    case OsEventTypeList.SCROLL_TOP_EVENT:
+      showGesture('上方向スライド')
+      break
+    case OsEventTypeList.SCROLL_BOTTOM_EVENT:
+      showGesture('下方向スライド')
+      break
+    case OsEventTypeList.DOUBLE_CLICK_EVENT:
+      isShuttingDown = true
+      void bridge
+        .shutDownPageContainer(0)
+        .then((didShutDown) => {
+          if (!didShutDown) {
+            isShuttingDown = false
+          }
+        })
+        .catch(() => {
+          isShuttingDown = false
+        })
+      break
+    default:
+      break
+  }
 })
 
 const whisper = new TextContainerProperty({
@@ -36,7 +97,7 @@ const whisper = new TextContainerProperty({
   paddingLength: 12,
   containerID: 1,
   containerName: 'world-whisper',
-  content: 'World Whisper\n\n世界のささやきを\nG2に届けます。',
+  content: initialContent,
   isEventCapture: 1,
 })
 
