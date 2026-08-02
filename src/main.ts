@@ -13,9 +13,9 @@ let gestureCount = 0
 let pendingTextUpdate = Promise.resolve()
 
 const initialContent = [
-  releaseLabel,
+  'World Whisper',
   '',
-  '操作確認画面に更新済み',
+  '操作を試してください',
   'タップ: 表示更新',
   '上下スライド: 表示更新',
   'ダブルタップ: 終了',
@@ -24,7 +24,7 @@ const initialContent = [
 const showGesture = (label: string) => {
   gestureCount += 1
   const content = [
-    releaseLabel,
+    'World Whisper',
     '',
     `検出: ${label}`,
     `操作回数: ${gestureCount}`,
