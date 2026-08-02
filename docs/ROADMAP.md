@@ -1,15 +1,16 @@
 # World Whisper G2 Roadmap
 
 ## 現在地
-- PoC開始：G2へ固定メッセージを表示する土台を作成済み
-- 次の目標：Even Hub経由で実機に表示できることを確認する
+- 公式テストアプリとWorld Whisperの固定メッセージをG2実機に表示確認済み
+- 次の目標：ダブルタップで終了できることを実機で確認する
 
 ## Phase 0 — 実機表示PoC
 **完了条件**：Even G2でWorld Whisperの固定文が表示され、ダブルタップで終了できる。
 
-1. Even Hub／G2で公式サンプルを実機起動
-2. World Whisper PoCをG2に表示
-3. 外部HTTPS URLをEven Appで読み込めるか検証
+1. ✅ Even Hub／G2で公式サンプルを実機起動
+2. ✅ World Whisper PoCをG2に表示
+3. GitHub Pagesへ自動公開
+4. 公開したHTTPS URLをEven Appで読み込めるか実機検証
 
 ## Phase 1 — 最小の「ささやき」
 **完了条件**：スマホの位置情報と時刻を入力に、50文字以内の1文を手動で生成・表示できる。
