@@ -5,7 +5,7 @@ import type { G2DisplayPort } from '../even/g2-display.ts'
 import { normalizeEvenHubEvent } from '../even/event-normalizer.ts'
 import { initialAppState, reduceAppState, type AppAction, type AppState } from './state.ts'
 
-const releaseLabel = 'LOCATION DIAGNOSTIC v0.2.4'
+const releaseLabel = 'CONTEXT SNAPSHOT v0.3.0'
 
 const initialContent = [
   releaseLabel,

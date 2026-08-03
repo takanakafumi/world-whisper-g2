@@ -2,10 +2,15 @@
   "package_id": "com.worldwhisper.g2",
   "edition": "202601",
   "name": "World Whisper",
-  "version": "0.2.4",
+  "version": "0.3.0",
   "min_app_version": "2.0.0",
-  "min_sdk_version": "0.0.10",
+  "min_sdk_version": "0.0.12",
   "entrypoint": "index.html",
-  "permissions": [],
+  "permissions": [
+    {
+      "name": "location",
+      "desc": "現在地と時刻に応じた短いささやきを生成するため、操作時に一度だけ位置情報を取得します。"
+    }
+  ],
   "supported_languages": ["ja", "en"]
 }

@@ -5,7 +5,8 @@
 - 両つる・リングで上下スライドとダブルタップ終了を実機確認済み
 - シングルタップはeventTypeなしのsysEventとして到達することを確認し、touch由来イベントとして互換処理を追加
 - Phase 1前の構造整理として、SDKアダプター、状態、G2表示、診断UIを分離し回帰テストを追加
-- Issue #11でGitHub Pages／ローカルHTTP／Even Hub WebViewの位置情報取得可否を検証中
+- Issue #11でブラウザ位置情報がEven Hub WebViewから拒否されることを確認し、公式SDK位置APIを採用
+- Issue #12で`ContextSnapshot`、`location`権限、Private Build検証を進行中
 
 ## Phase 0 — 実機表示PoC
 **完了条件**：Even G2でWorld Whisperの固定文が表示され、ダブルタップで終了できる。
@@ -29,7 +30,7 @@
 
 ### Phase 1アクション
 
-1. [#11 Even Hub環境で位置情報取得可否を検証](https://github.com/takanakafumi/world-whisper-g2/issues/11)
+1. ✅ [#11 Even Hub環境で位置情報取得可否を検証](https://github.com/takanakafumi/world-whisper-g2/issues/11)
 2. [#12 ContextSnapshotとcontext providerを実装](https://github.com/takanakafumi/world-whisper-g2/issues/12)
 3. [#13 WhisperGeneratorとルールベース生成を実装](https://github.com/takanakafumi/world-whisper-g2/issues/13)
 4. [#14 G2へ統合してPhase 1を実機検証](https://github.com/takanakafumi/world-whisper-g2/issues/14)
