@@ -1,143 +1,18 @@
-import {
-  CreateStartUpPageContainer,
-  EventSourceType,
-  OsEventTypeList,
-  TextContainerProperty,
-  TextContainerUpgrade,
-  waitForEvenAppBridge,
-} from '@evenrealities/even_hub_sdk'
+import { waitForEvenAppBridge } from '@evenrealities/even_hub_sdk'
 
-const bridge = await waitForEvenAppBridge()
-const releaseLabel = 'GESTURE DIAGNOSTICS v0.2.2'
-let isShuttingDown = false
-let gestureCount = 0
-let rawEventCount = 0
-let pendingTextUpdate = Promise.resolve()
+import { AppController } from './app/controller.ts'
+import { DiagnosticsView } from './diagnostics/diagnostics-view.ts'
+import { G2Display } from './even/g2-display.ts'
 
-const initialContent = [
-  releaseLabel,
-  'World Whisper',
-  '',
-  '操作を試してください',
-  'タップ: 表示更新',
-  '上下スライド: 表示更新',
-  'ダブルタップ: 終了',
-].join('\n')
+const diagnostics = new DiagnosticsView('#diagnostic')
 
-const showGesture = (label: string) => {
-  gestureCount += 1
-  const content = [
-    'World Whisper',
-    '',
-    `検出: ${label}`,
-    `操作回数: ${gestureCount}`,
-    '',
-    'ダブルタップで終了',
-  ].join('\n')
+try {
+  diagnostics.setStatus('Even Hubへ接続しています')
+  const bridge = await waitForEvenAppBridge()
+  const controller = new AppController(new G2Display(bridge), diagnostics)
 
-  // Keep rapid slide events in order instead of sending overlapping bridge requests.
-  pendingTextUpdate = pendingTextUpdate
-    .catch(() => undefined)
-    .then(async () => {
-      const didUpdate = await bridge.textContainerUpgrade(
-        new TextContainerUpgrade({
-          containerID: 1,
-          containerName: 'world-whisper',
-          contentOffset: 0,
-          contentLength: content.length,
-          content,
-        }),
-      )
-
-      if (!didUpdate) {
-        throw new Error('Failed to update the gesture display')
-      }
-    })
+  bridge.onEvenHubEvent((event) => controller.handleEvenHubEvent(event))
+  await controller.start()
+} catch (error) {
+  diagnostics.reportError(error)
 }
-
-const recordRawEvent = (eventType: unknown, event: unknown) => {
-  rawEventCount += 1
-  let rawEvent = ''
-
-  try {
-    rawEvent = JSON.stringify(event, null, 2) ?? String(event)
-  } catch {
-    rawEvent = String(event)
-  }
-
-  const diagnostic = document.querySelector<HTMLElement>('#diagnostic')
-  if (diagnostic) {
-    diagnostic.textContent = [
-      `受信イベント数: ${rawEventCount}`,
-      `eventType: ${String(eventType)}`,
-      '',
-      rawEvent.slice(0, 2000),
-    ].join('\n')
-  }
-
-  console.info('[World Whisper] Even Hub event', { eventType, event })
-}
-
-bridge.onEvenHubEvent((event) => {
-  const reportedEventType =
-    event.textEvent?.eventType ?? event.listEvent?.eventType ?? event.sysEvent?.eventType
-  const touchSource = EventSourceType.fromJson(event.sysEvent?.eventSource)
-  const isUntypedTouchEvent =
-    reportedEventType === undefined &&
-    event.sysEvent !== undefined &&
-    touchSource !== undefined &&
-    touchSource !== EventSourceType.TOUCH_EVENT_FORM_DUMMY_NULL
-  const eventType = isUntypedTouchEvent ? OsEventTypeList.CLICK_EVENT : reportedEventType
-
-  recordRawEvent(reportedEventType, event)
-
-  if (isShuttingDown) {
-    return
-  }
-
-  switch (eventType) {
-    case OsEventTypeList.CLICK_EVENT:
-      showGesture('シングルタップ')
-      break
-    case OsEventTypeList.SCROLL_TOP_EVENT:
-      showGesture('上方向スライド')
-      break
-    case OsEventTypeList.SCROLL_BOTTOM_EVENT:
-      showGesture('下方向スライド')
-      break
-    case OsEventTypeList.DOUBLE_CLICK_EVENT:
-      isShuttingDown = true
-      void bridge
-        .shutDownPageContainer(0)
-        .then((didShutDown) => {
-          if (!didShutDown) {
-            isShuttingDown = false
-          }
-        })
-        .catch(() => {
-          isShuttingDown = false
-        })
-      break
-    default:
-      showGesture(`未判定イベント (${String(eventType)})`)
-      break
-  }
-})
-
-const whisper = new TextContainerProperty({
-  xPosition: 0,
-  yPosition: 0,
-  width: 576,
-  height: 288,
-  borderWidth: 0,
-  borderColor: 5,
-  paddingLength: 12,
-  containerID: 1,
-  containerName: 'world-whisper',
-  content: initialContent,
-  isEventCapture: 1,
-})
-
-await bridge.createStartUpPageContainer(
-  new CreateStartUpPageContainer({ containerTotalNum: 1, textObject: [whisper] }),
-)

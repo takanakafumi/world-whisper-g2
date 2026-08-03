@@ -1,15 +1,15 @@
 # World Whisper for Even G2
 
-最初のPoCです。Even G2に固定のメッセージを表示し、ダブルタップで終了します。
+Phase 1へ進む前の構造整理版です。Even G2の操作イベントを正規化し、固定メッセージの表示とダブルタップ終了を確認できます。
 
 ## 動かし方
 
 ```powershell
-npm install
-npm run dev
+pnpm install
+pnpm dev
 ```
 
-シミュレータは `npm run simulate`、実機は開発サーバーを起動後に `npx evenhub qr --url http://<PCのIPアドレス>:5173` を実行して、Even HubアプリでQRコードを読み込みます。
+シミュレータは `pnpm simulate`、実機は開発サーバーを起動後に `pnpm exec evenhub qr --url http://<PCのIPアドレス>:5173` を実行して、Even HubアプリでQRコードを読み込みます。
 
 Windowsでは [`start-local.cmd`](start-local.cmd) をダブルクリックすると、LAN内IPアドレスの検出、開発サーバーの起動、Even Hub用QRコードの表示までを一度に実行できます。終了時は、別ウィンドウで起動した開発サーバーを `Ctrl+C` で停止します。
 
@@ -25,7 +25,7 @@ https://takanakafumi.github.io/world-whisper-g2/
 
 更新時はGitHub Actionsの `Deploy to GitHub Pages` が完了してから、Even Hubアプリで同じURLを読み直します。古い内容が表示される場合は、URLの末尾に `?v=<任意の番号>` を付けて再読み込みしてください。
 
-今回の操作確認版が読み込まれていれば、スマホ画面とG2画面の先頭に **`GESTURE DIAGNOSTICS v0.2.2`** と表示されます。この表示がない場合は、GitHub Pagesのデプロイ完了を確認し、クエリ番号を変えて読み直してください。
+今回の構造整理版が読み込まれていれば、スマホ画面とG2画面の先頭に **`ARCHITECTURE BASELINE v0.2.3`** と表示されます。この表示がない場合は、GitHub Pagesのデプロイ完了を確認し、クエリ番号を変えて読み直してください。
 
 GitHub Pagesから読み込んだ場合も、実機のタッチ操作はEven Hubアプリのブリッジ経由でアプリへ届きます。公式SDKのイベント種別に合わせ、次の操作を確認できます。
 
@@ -39,6 +39,10 @@ GitHub Pagesから読み込んだ場合も、実機のタッチ操作はEven Hub
 ### v0.2.2 実機検証結果
 
 左右のつるとEven R1リングで、シングルタップ、上下スライド、ダブルタップ終了がすべて動作することを確認しました。シングルタップは実機環境で `eventType` のない `sysEvent` として届くため、touch由来の `eventSource` を持つイベントをシングルタップとして補完しています。スマホ画面には受信イベント数と生イベントデータを表示し、SDKやファームウェアによる形式差を引き続き確認できます。
+
+### v0.2.3 構造整理
+
+起動処理、アプリ状態、Even Hubイベント正規化、G2表示、スマホ診断を分割しました。`pnpm test` で実機互換イベントと状態遷移の回帰テストを実行できます。Phase 1ではこの基盤へ位置・時刻の文脈取得と、ささやき生成インターフェースを追加します。
 
 > GitHub Pagesは静的ファイルを公開します。今後追加するLLMのAPIキー、位置履歴、個人データは置かず、生成処理は別のバックエンドへ分離します。
 
