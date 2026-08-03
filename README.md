@@ -11,6 +11,8 @@ npm run dev
 
 シミュレータは `npm run simulate`、実機は開発サーバーを起動後に `npx evenhub qr --url http://<PCのIPアドレス>:5173` を実行して、Even HubアプリでQRコードを読み込みます。
 
+Windowsでは [`start-local.cmd`](start-local.cmd) をダブルクリックすると、LAN内IPアドレスの検出、開発サーバーの起動、Even Hub用QRコードの表示までを一度に実行できます。終了時は、別ウィンドウで起動した開発サーバーを `Ctrl+C` で停止します。
+
 ## スマホから実機確認する
 
 `main` ブランチへ反映すると、GitHub ActionsがアプリをGitHub Pagesへ自動公開します。初回のみ、GitHubリポジトリの **Settings → Pages → Build and deployment → Source** で **GitHub Actions** を選択してください。
@@ -23,7 +25,7 @@ https://takanakafumi.github.io/world-whisper-g2/
 
 更新時はGitHub Actionsの `Deploy to GitHub Pages` が完了してから、Even Hubアプリで同じURLを読み直します。古い内容が表示される場合は、URLの末尾に `?v=<任意の番号>` を付けて再読み込みしてください。
 
-今回の操作確認版が読み込まれていれば、スマホ画面とG2画面の先頭に **`GESTURE TEST v0.2.0`** と表示されます。この表示がない場合は、GitHub Pagesのデプロイ完了を確認し、クエリ番号を変えて読み直してください。
+今回の操作確認版が読み込まれていれば、スマホ画面とG2画面の先頭に **`GESTURE DIAGNOSTICS v0.2.2`** と表示されます。この表示がない場合は、GitHub Pagesのデプロイ完了を確認し、クエリ番号を変えて読み直してください。
 
 GitHub Pagesから読み込んだ場合も、実機のタッチ操作はEven Hubアプリのブリッジ経由でアプリへ届きます。公式SDKのイベント種別に合わせ、次の操作を確認できます。
 
@@ -33,6 +35,10 @@ GitHub Pagesから読み込んだ場合も、実機のタッチ操作はEven Hub
 - ダブルタップ (`DOUBLE_CLICK_EVENT`): アプリを終了
 
 イベントを受け取るコンテナには `isEventCapture: 1` を設定しています。実機からのイベント形式の違いも確認できるよう、テキスト、リスト、システムの各イベントに含まれる操作種別を処理します。
+
+### v0.2.2 実機検証結果
+
+左右のつるとEven R1リングで、シングルタップ、上下スライド、ダブルタップ終了がすべて動作することを確認しました。シングルタップは実機環境で `eventType` のない `sysEvent` として届くため、touch由来の `eventSource` を持つイベントをシングルタップとして補完しています。スマホ画面には受信イベント数と生イベントデータを表示し、SDKやファームウェアによる形式差を引き続き確認できます。
 
 > GitHub Pagesは静的ファイルを公開します。今後追加するLLMのAPIキー、位置履歴、個人データは置かず、生成処理は別のバックエンドへ分離します。
 

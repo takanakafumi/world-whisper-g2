@@ -1,5 +1,6 @@
 import {
   CreateStartUpPageContainer,
+  EventSourceType,
   OsEventTypeList,
   TextContainerProperty,
   TextContainerUpgrade,
@@ -7,9 +8,10 @@ import {
 } from '@evenrealities/even_hub_sdk'
 
 const bridge = await waitForEvenAppBridge()
-const releaseLabel = 'GESTURE TEST v0.2.0'
+const releaseLabel = 'GESTURE DIAGNOSTICS v0.2.2'
 let isShuttingDown = false
 let gestureCount = 0
+let rawEventCount = 0
 let pendingTextUpdate = Promise.resolve()
 
 const initialContent = [
@@ -53,9 +55,41 @@ const showGesture = (label: string) => {
     })
 }
 
+const recordRawEvent = (eventType: unknown, event: unknown) => {
+  rawEventCount += 1
+  let rawEvent = ''
+
+  try {
+    rawEvent = JSON.stringify(event, null, 2) ?? String(event)
+  } catch {
+    rawEvent = String(event)
+  }
+
+  const diagnostic = document.querySelector<HTMLElement>('#diagnostic')
+  if (diagnostic) {
+    diagnostic.textContent = [
+      `受信イベント数: ${rawEventCount}`,
+      `eventType: ${String(eventType)}`,
+      '',
+      rawEvent.slice(0, 2000),
+    ].join('\n')
+  }
+
+  console.info('[World Whisper] Even Hub event', { eventType, event })
+}
+
 bridge.onEvenHubEvent((event) => {
-  const eventType =
+  const reportedEventType =
     event.textEvent?.eventType ?? event.listEvent?.eventType ?? event.sysEvent?.eventType
+  const touchSource = EventSourceType.fromJson(event.sysEvent?.eventSource)
+  const isUntypedTouchEvent =
+    reportedEventType === undefined &&
+    event.sysEvent !== undefined &&
+    touchSource !== undefined &&
+    touchSource !== EventSourceType.TOUCH_EVENT_FORM_DUMMY_NULL
+  const eventType = isUntypedTouchEvent ? OsEventTypeList.CLICK_EVENT : reportedEventType
+
+  recordRawEvent(reportedEventType, event)
 
   if (isShuttingDown) {
     return
@@ -85,6 +119,7 @@ bridge.onEvenHubEvent((event) => {
         })
       break
     default:
+      showGesture(`未判定イベント (${String(eventType)})`)
       break
   }
 })
