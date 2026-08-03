@@ -8,7 +8,7 @@
 - Issue #11でブラウザ位置情報がEven Hub WebViewから拒否されることを確認し、公式SDK位置APIを採用
 - Issue #12で`ContextSnapshot`と公式SDK位置取得を実装し、Private Build実機検証に成功
 - Issue #13で置換可能な`WhisperGenerator`と50文字以内のルールベース生成を実装
-- Issue #14でシングルタップから取得・生成・G2表示までを統合し、実機検証を準備
+- Issue #14でシングルタップから取得・生成・G2表示までを統合し、左右のつるとリングで実機検証済み
 
 ## Phase 0 — 実機表示PoC
 **完了条件**：Even G2でWorld Whisperの固定文が表示され、ダブルタップで終了できる。
@@ -28,14 +28,14 @@
 2. ✅ `WhisperGenerator`インターフェースを定義
 3. ✅ ルールベースで50文字以内の1文を生成
 4. ✅ 手動操作でG2へ表示する統合を実装
-5. 実機結果を記録し、バックエンドLLM接続の入力・出力契約を確定
+5. ✅ 実機結果を記録し、バックエンドLLM接続の入力・出力契約を確定
 
 ### Phase 1アクション
 
 1. ✅ [#11 Even Hub環境で位置情報取得可否を検証](https://github.com/takanakafumi/world-whisper-g2/issues/11)
 2. ✅ [#12 ContextSnapshotとcontext providerを実装](https://github.com/takanakafumi/world-whisper-g2/issues/12)
 3. ✅ [#13 WhisperGeneratorとルールベース生成を実装](https://github.com/takanakafumi/world-whisper-g2/issues/13)
-4. [#14 G2へ統合してPhase 1を実機検証](https://github.com/takanakafumi/world-whisper-g2/issues/14)
+4. ✅ [#14 G2へ統合してPhase 1を実機検証](https://github.com/takanakafumi/world-whisper-g2/issues/14)
 
 ## Phase 2 — 文脈と操作
 **完了条件**：移動・滞在時間を加味し、「閉じる／深掘り」の操作をG2で行える。
