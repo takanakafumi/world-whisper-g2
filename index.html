@@ -9,12 +9,17 @@
       #app { display: flex; height: 100%; flex-direction: column; gap: 12px; align-items: center; justify-content: center; padding: 24px; box-sizing: border-box; text-align: center; }
       .release { border: 1px solid #e5e5e5; border-radius: 999px; padding: 4px 12px; font-weight: 700; letter-spacing: .08em; }
       #diagnostic { width: min(100%, 720px); max-height: 45vh; overflow: auto; margin: 0; padding: 12px; box-sizing: border-box; border: 1px solid #666; border-radius: 8px; background: #181818; text-align: left; white-space: pre-wrap; overflow-wrap: anywhere; }
+      button { border: 1px solid #e5e5e5; border-radius: 8px; padding: 10px 16px; background: #333; color: #fff; font: inherit; }
+      button:disabled { opacity: .5; }
+      #location-diagnostic { width: min(100%, 720px); max-height: 35vh; overflow: auto; margin: 0; padding: 12px; box-sizing: border-box; border: 1px solid #507050; border-radius: 8px; background: #172017; text-align: left; white-space: pre-wrap; overflow-wrap: anywhere; }
     </style>
   </head>
   <body>
     <div id="app">
-      <div class="release">ARCHITECTURE BASELINE v0.2.3</div>
-      <div>Phase 1に向けた構造整理版です。</div>
+      <div class="release">LOCATION DIAGNOSTIC v0.2.4</div>
+      <div>Issue #11: Even Hub環境の位置情報取得を確認します。</div>
+      <button id="location-diagnostic-button" type="button">位置情報を診断</button>
+      <pre id="location-diagnostic">未実行です。位置情報は保存・送信しません。</pre>
       <pre id="diagnostic">状態: 起動準備中</pre>
     </div>
     <script type="module" src="/src/main.ts"></script>
