@@ -38,7 +38,9 @@ LLMは50文字以内の日本語1文で、解説・長文・断定を避ける�
 ## 6. アーキテクチャ
 Even G2（BLE）→ スマートフォン／Even App Plugin（GPS・時刻・速度・音声・描画）→ HTTPS/WebSocket → Context Backend（文脈構築・ナレッジ検索）→ 外部LLM API。
 
-クライアントはTypeScript/React/Even Hub SDK。バックエンドはFastAPIまたはNode.js。長期的には反応履歴を使う長期記憶と位置連動ナレッジを追加する。
+クライアントはTypeScript／Even Hub SDKを基本とし、UIが複雑化した場合にReactを導入する。バックエンドはFastAPIまたはNode.js。長期的には反応履歴を使う長期記憶と位置連動ナレッジを追加する。
+
+クライアント内部では、Even Hub SDKの実機差を吸収するアダプター、アプリ状態、G2表示、診断UI、文脈取得、ささやき生成を分離する。Phase 1では `ContextSnapshot → WhisperGenerator → G2表示` を基本フローとし、最初はルールベース生成、後からHTTPSバックエンド経由のLLM生成へ置き換える。APIキーや位置履歴はGitHub Pagesのクライアントへ保存しない。
 
 ## 7. 段階開発
 1. **PoC**：スマホ単体で位置情報＋LLM、手動トリガーで1文を表示・音声出力

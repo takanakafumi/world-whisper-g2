@@ -1,11 +1,12 @@
 {
   "name": "world-whisper-g2",
   "private": true,
-  "version": "0.2.2",
+  "version": "0.2.3",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
+    "test": "node --experimental-strip-types --test tests/event-normalizer.test.ts tests/g2-display.test.ts tests/state.test.ts",
     "preview": "vite preview",
     "pack": "evenhub pack",
     "simulate": "evenhub-simulator http://localhost:5173"

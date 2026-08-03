@@ -1,3 +1,7 @@
 node_modules/
+.pnpm-store/
 dist/
 out/
+package-lock.json
+vite.log
+vite-error.log
