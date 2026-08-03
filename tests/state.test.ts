@@ -13,8 +13,25 @@ test('tracks ready, event, and gesture state', () => {
     gestureCount: 1,
     rawEventCount: 1,
     isGenerating: false,
+    interaction: {
+      phase: 'idle',
+      perspectiveIndex: 0,
+    },
     lastError: undefined,
   })
+})
+
+test('tracks Phase 2 interaction transitions', () => {
+  const ready = reduceAppState(initialAppState, { type: 'READY' })
+  const notified = reduceAppState(ready, { type: 'NOTIFICATION_TRIGGERED' })
+  const primary = reduceAppState(notified, { type: 'PRIMARY_SHOWN' })
+  const next = reduceAppState(primary, { type: 'NEXT_SHOWN' })
+  const dismissed = reduceAppState(next, { type: 'DISPLAY_DISMISSED' })
+
+  assert.equal(notified.interaction.phase, 'notified')
+  assert.equal(primary.interaction.phase, 'primary')
+  assert.deepEqual(next.interaction, { phase: 'next', perspectiveIndex: 1 })
+  assert.equal(dismissed.interaction.phase, 'dismissed')
 })
 
 test('tracks whisper generation without blocking shutdown', () => {
