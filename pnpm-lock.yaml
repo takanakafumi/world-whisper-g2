@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@evenrealities/even_hub_sdk':
-        specifier: ^0.0.10
-        version: 0.0.10
+        specifier: ^0.0.12
+        version: 0.0.12
     devDependencies:
       '@evenrealities/evenhub-cli':
         specifier: ^0.1.12
@@ -165,8 +165,8 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@evenrealities/even_hub_sdk@0.0.10':
-    resolution: {integrity: sha512-95zmlbFzyyh+TxPz5Wq8Ix4IxUDZzo/WJWAUXPQ/83kaU8R78MOYYBgKDM47Yw61LoEn+Ob5GNLDu/T9bj85xA==}
+  '@evenrealities/even_hub_sdk@0.0.12':
+    resolution: {integrity: sha512-PXAeuPl7dMIlSWlctDeQAodIr7iuNROaH9GvRrZ86xzRh33DkMJYY1hSxy6BTk+TLkDA0tYlVi4bOsSIJngINA==}
     engines: {node: ^20.0.0 || >=22.0.0}
 
   '@evenrealities/evenhub-cli@0.1.13':
@@ -741,7 +741,7 @@ snapshots:
   '@esbuild/win32-x64@0.21.5':
     optional: true
 
-  '@evenrealities/even_hub_sdk@0.0.10': {}
+  '@evenrealities/even_hub_sdk@0.0.12': {}
 
   '@evenrealities/evenhub-cli@0.1.13(typescript@5.9.3)':
     dependencies:

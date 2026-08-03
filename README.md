@@ -25,7 +25,7 @@ https://takanakafumi.github.io/world-whisper-g2/
 
 更新時はGitHub Actionsの `Deploy to GitHub Pages` が完了してから、Even Hubアプリで同じURLを読み直します。古い内容が表示される場合は、URLの末尾に `?v=<任意の番号>` を付けて再読み込みしてください。
 
-今回の位置情報診断版が読み込まれていれば、スマホ画面とG2画面の先頭に **`LOCATION DIAGNOSTIC v0.2.4`** と表示されます。この表示がない場合は、GitHub Pagesのデプロイ完了を確認し、クエリ番号を変えて読み直してください。
+今回のContextSnapshot版が読み込まれていれば、スマホ画面とG2画面の先頭に **`CONTEXT SNAPSHOT v0.3.0`** と表示されます。この表示がない場合は、GitHub Pagesのデプロイ完了を確認し、クエリ番号を変えて読み直してください。
 
 GitHub Pagesから読み込んだ場合も、実機のタッチ操作はEven Hubアプリのブリッジ経由でアプリへ届きます。公式SDKのイベント種別に合わせ、次の操作を確認できます。
 
@@ -49,6 +49,21 @@ GitHub Pagesから読み込んだ場合も、実機のタッチ操作はEven Hub
 スマホ画面の「位置情報を診断」を押すと、緯度・経度・精度・取得時刻、Secure Context判定、実行URLを表示します。権限拒否、位置取得不能、タイムアウト、API未対応を区別します。結果は画面表示だけに使い、保存や外部送信は行いません。
 
 Issue #11の実機検証では、ローカルURLとGitHub Pages URLの両方で診断し、表示された結果をIssueへ記録します。
+
+実機検証の結果、Even Hub WebViewではブラウザ標準の`navigator.geolocation`が許可ダイアログなしで拒否されました。そのため、以降はブラウザAPIを使用しません。
+
+### v0.3.0 ContextSnapshot
+
+公式Even Hub SDKの`bridge.getAppLocation()`を使用し、スマホの位置情報と時刻を`ContextSnapshot`へ変換します。取得は「現在地と時刻を取得」を押した時だけ実行し、結果はメモリ上の画面表示だけに使用します。
+
+位置情報の実権限はQRやGitHub Pagesでは再現できません。Private Buildを作る場合は次を実行します。
+
+```powershell
+pnpm build
+pnpm pack:private
+```
+
+生成された`world-whisper-g2.ehpk`をEven Hub Developer PortalのPrivate buildsへアップロードし、スマホからインストールして許可ダイアログと取得結果を確認します。
 
 > GitHub Pagesは静的ファイルを公開します。今後追加するLLMのAPIキー、位置履歴、個人データは置かず、生成処理は別のバックエンドへ分離します。
 

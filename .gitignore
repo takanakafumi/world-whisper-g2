@@ -2,6 +2,7 @@ node_modules/
 .pnpm-store/
 dist/
 out/
+*.ehpk
 package-lock.json
 vite.log
 vite-error.log
