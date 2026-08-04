@@ -6,6 +6,9 @@ export interface SamplingSessionState {
   active: boolean
   transitioning: boolean
   movement: MovementContext
+  receivedEventCount: number
+  ignoredEventCount: number
+  latestCapturedAt: string | null
   latestAccuracyMeters: number | null
   error: string | null
 }
@@ -25,6 +28,9 @@ export class SamplingSession {
   private transitioning = false
   private generation = 0
   private lastAcceptedTimestamp = Number.NEGATIVE_INFINITY
+  private receivedEventCount = 0
+  private ignoredEventCount = 0
+  private latestCapturedAt: string | null = null
   private latestAccuracyMeters: number | null = null
   private error: string | null = null
 
@@ -43,6 +49,9 @@ export class SamplingSession {
     const generation = ++this.generation
     this.timeline.clear()
     this.lastAcceptedTimestamp = Number.NEGATIVE_INFINITY
+    this.receivedEventCount = 0
+    this.ignoredEventCount = 0
+    this.latestCapturedAt = null
     this.latestAccuracyMeters = null
     this.error = null
     this.active = true
@@ -91,8 +100,14 @@ export class SamplingSession {
   private receive(snapshot: ContextSnapshot, generation: number): void {
     if (!this.active || this.generation !== generation) return
     try {
+      this.receivedEventCount += 1
+      this.latestCapturedAt = snapshot.capturedAt
       const timestamp = Date.parse(snapshot.capturedAt)
-      if (Number.isFinite(timestamp) && timestamp <= this.lastAcceptedTimestamp) return
+      if (Number.isFinite(timestamp) && timestamp <= this.lastAcceptedTimestamp) {
+        this.ignoredEventCount += 1
+        this.emit()
+        return
+      }
       const movement = this.timeline.add(snapshot)
       this.lastAcceptedTimestamp = timestamp
       this.latestAccuracyMeters = snapshot.accuracyMeters
@@ -118,6 +133,9 @@ export class SamplingSession {
       active: this.active,
       transitioning: this.transitioning,
       movement: { ...movement },
+      receivedEventCount: this.receivedEventCount,
+      ignoredEventCount: this.ignoredEventCount,
+      latestCapturedAt: this.latestCapturedAt,
       latestAccuracyMeters: this.latestAccuracyMeters,
       error: this.error,
     }

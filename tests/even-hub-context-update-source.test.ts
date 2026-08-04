@@ -28,7 +28,7 @@ test('uses SDK continuous location updates and converts events', async () => {
   assert.deepEqual(options, {
     accuracy: AppLocationAccuracy.Medium,
     intervalMs: 5_000,
-    distanceFilter: 5,
+    distanceFilter: 0,
   })
   assert.equal(snapshots.length, 1)
   assert.equal(unsubscribed, 1)

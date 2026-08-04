@@ -46,7 +46,7 @@ export class EvenHubContextUpdateSource implements ContextUpdateSource {
       const started = await this.bridge.startAppLocationUpdates({
         accuracy: AppLocationAccuracy.Medium,
         intervalMs: 5_000,
-        distanceFilter: 5,
+        distanceFilter: 0,
       })
       if (!started) throw new Error('Even Hub SDKの位置更新を開始できませんでした。')
     })()
