@@ -11,7 +11,7 @@
 - Issue #14でシングルタップから取得・生成・G2表示までを統合し、左右のつるとリングで実機検証済み
 - v0.4.0の「シングルタップで生成／ダブルタップで終了」はPhase 1の検証用操作。Phase 2では設計方針V4に従い、パッシブ通知／シングルタップ深掘り／長押し終了／ダブルタップ音声入力へ移行する
 - Issue #19でスマホの通知／消去ボタンと、G2の深掘り／別視点／閉じる状態遷移をv0.5.1として実装・実機確認済み。下／後スライドを別視点、上／前スライドを飛ばす／消去へ割り当て
-- Issue #22でメモリ内`ContextTimeline`と移動・静止・滞在判定を実装中。自動取得や通知接続は後続Issueへ分離
+- Issue #22でメモリ内`ContextTimeline`と移動・静止・滞在判定を実装済み。Issue #24で手動サンプリングと診断表示を実装中
 
 ## Phase 0 — 実機表示PoC
 **完了条件**：Even G2でWorld Whisperの固定文が表示され、ダブルタップで終了できる。
@@ -54,7 +54,8 @@
 ### Phase 2アクション
 
 1. ✅ [#19 スマホ代替操作とG2状態遷移](https://github.com/takanakafumi/world-whisper-g2/issues/19)
-2. [#22 ContextTimelineと移動・滞在判定](https://github.com/takanakafumi/world-whisper-g2/issues/22)
+2. ✅ [#22 ContextTimelineと移動・滞在判定](https://github.com/takanakafumi/world-whisper-g2/issues/22)
+3. [#24 手動コンテキストサンプリングと診断表示](https://github.com/takanakafumi/world-whisper-g2/issues/24)
 
 ## Phase 3 — 旅での実地テスト
 **完了条件**：通知頻度、可読性、GPS精度、通信・電池消費を記録して改善できる。
