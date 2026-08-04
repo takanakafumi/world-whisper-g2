@@ -44,6 +44,7 @@ try {
   new DevelopmentControls(
     '#trigger-notification-button',
     '#dismiss-display-button',
+    '#auto-dismiss-toggle',
     controller,
   ).start()
 

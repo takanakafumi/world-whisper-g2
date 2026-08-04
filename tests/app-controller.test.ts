@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 
 import { AppController } from '../src/app/controller.ts'
+import type { AutoDismissPort } from '../src/app/auto-dismiss-timer.ts'
 import type { ContextCaptureResult, ContextSnapshot } from '../src/context/context-snapshot.ts'
 
 const context: ContextSnapshot = {
@@ -16,6 +17,7 @@ const context: ContextSnapshot = {
 const createHarness = (
   capture: () => Promise<ContextCaptureResult>,
   onShutdown: () => void = () => undefined,
+  autoDismiss: AutoDismissPort = { schedule: () => undefined, cancel: () => undefined },
 ) => {
   const created: string[] = []
   const shown: string[] = []
@@ -51,6 +53,7 @@ const createHarness = (
       },
     },
     onShutdown,
+    autoDismiss,
   )
 
   return {
@@ -159,4 +162,52 @@ test('double tap remains a temporary development shutdown action', async () => {
 
   assert.equal(harness.counts().shutdownCount, 1)
   assert.equal(cleanupCount, 1)
+})
+
+test('primary, deepen, and next displays receive fresh auto-dismiss timers', async () => {
+  const callbacks: Array<() => void> = []
+  let cancelCount = 0
+  const harness = createHarness(
+    async () => ({ ok: true, snapshot: context }),
+    () => undefined,
+    {
+      schedule: (callback, delayMs) => {
+        assert.equal(delayMs, 5_000)
+        callbacks.push(callback)
+      },
+      cancel: () => { cancelCount += 1 },
+    },
+  )
+  await harness.controller.start()
+  await harness.controller.triggerNotification()
+  await harness.controller.handleEvenHubEvent({ sysEvent: { eventSource: 1 } })
+  await harness.controller.handleEvenHubEvent({ sysEvent: { eventSource: 1 } })
+  await harness.controller.handleEvenHubEvent({ listEvent: { eventType: 2 } })
+
+  assert.equal(callbacks.length, 3)
+  callbacks.at(-1)!()
+  await new Promise((resolve) => setTimeout(resolve, 0))
+  assert.equal(harness.shown.at(-1), '\u00a0')
+  assert.ok(cancelCount >= 2)
+})
+
+test('auto-dismiss can be disabled and re-enabled for the current display', async () => {
+  const callbacks: Array<() => void> = []
+  let cancelCount = 0
+  const harness = createHarness(
+    async () => ({ ok: true, snapshot: context }),
+    () => undefined,
+    {
+      schedule: (callback) => { callbacks.push(callback) },
+      cancel: () => { cancelCount += 1 },
+    },
+  )
+  await harness.controller.start()
+  await harness.controller.triggerNotification()
+  await harness.controller.handleEvenHubEvent({ sysEvent: { eventSource: 1 } })
+  harness.controller.setAutoDismissEnabled(false)
+  harness.controller.setAutoDismissEnabled(true)
+
+  assert.equal(callbacks.length, 2)
+  assert.ok(cancelCount >= 2)
 })
