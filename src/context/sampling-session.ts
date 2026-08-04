@@ -24,6 +24,7 @@ export class SamplingSession {
   private active = false
   private transitioning = false
   private generation = 0
+  private lastAcceptedTimestamp = Number.NEGATIVE_INFINITY
   private latestAccuracyMeters: number | null = null
   private error: string | null = null
 
@@ -41,6 +42,7 @@ export class SamplingSession {
     if (this.active || this.transitioning) return
     const generation = ++this.generation
     this.timeline.clear()
+    this.lastAcceptedTimestamp = Number.NEGATIVE_INFINITY
     this.latestAccuracyMeters = null
     this.error = null
     this.active = true
@@ -89,7 +91,10 @@ export class SamplingSession {
   private receive(snapshot: ContextSnapshot, generation: number): void {
     if (!this.active || this.generation !== generation) return
     try {
+      const timestamp = Date.parse(snapshot.capturedAt)
+      if (Number.isFinite(timestamp) && timestamp <= this.lastAcceptedTimestamp) return
       const movement = this.timeline.add(snapshot)
+      this.lastAcceptedTimestamp = timestamp
       this.latestAccuracyMeters = snapshot.accuracyMeters
       this.error = null
       this.emit(movement)

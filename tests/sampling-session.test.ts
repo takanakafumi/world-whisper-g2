@@ -82,6 +82,19 @@ test('reports source errors without terminating an active session', async () => 
   assert.equal(session.getState().error, null)
 })
 
+test('ignores duplicate and stale SDK timestamps', async () => {
+  const source = new FakeSource()
+  const session = new SamplingSession(source, new ContextTimeline())
+  await session.start()
+
+  source.emit(snapshot(10))
+  source.emit(snapshot(10, 35.0002))
+  source.emit(snapshot(5, 35.0003))
+
+  assert.equal(session.getState().movement.sampleCount, 1)
+  assert.equal(session.getState().error, null)
+})
+
 test('reports SDK start and stop failures', async () => {
   const startFailure = new SamplingSession({
     async start() { throw new Error('start failed') },
