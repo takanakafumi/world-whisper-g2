@@ -48,3 +48,15 @@ test('rejects invalid context values', () => {
   assert.throws(() => generator.generate({ ...snapshot(12), longitude: Number.NaN }), RangeError)
 })
 
+test('returns deterministic alternative perspectives', () => {
+  const primary = generator.generate(snapshot(12))
+  const alternative = generator.generate(snapshot(12), { perspectiveIndex: 1 })
+
+  assert.notEqual(alternative, primary)
+  assert.equal(generator.generate(snapshot(12), { perspectiveIndex: 1 }), alternative)
+  assert.throws(
+    () => generator.generate(snapshot(12), { perspectiveIndex: -1 }),
+    RangeError,
+  )
+})
+

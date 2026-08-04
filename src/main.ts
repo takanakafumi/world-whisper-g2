@@ -1,6 +1,7 @@
 import { waitForEvenAppBridge } from '@evenrealities/even_hub_sdk'
 
 import { AppController } from './app/controller.ts'
+import { DevelopmentControls } from './app/development-controls.ts'
 import { EvenHubContextProvider } from './context/even-hub-context-provider.ts'
 import { LocationDiagnosticsController } from './context/location-diagnostics-controller.ts'
 import { DiagnosticsView } from './diagnostics/diagnostics-view.ts'
@@ -23,6 +24,11 @@ try {
     '#location-diagnostic-button',
     '#location-diagnostic',
     contextProvider,
+  ).start()
+  new DevelopmentControls(
+    '#trigger-notification-button',
+    '#dismiss-display-button',
+    controller,
   ).start()
 
   bridge.onEvenHubEvent((event) => void controller.handleEvenHubEvent(event))
