@@ -1,7 +1,7 @@
 {
   "name": "world-whisper-g2",
   "private": true,
-  "version": "0.5.0",
+  "version": "0.5.1",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -9,7 +9,7 @@
     "test": "node --experimental-strip-types --test tests/app-controller.test.ts tests/even-hub-context-provider.test.ts tests/event-normalizer.test.ts tests/g2-display.test.ts tests/interaction-state.test.ts tests/rule-based-whisper-generator.test.ts tests/state.test.ts",
     "preview": "vite preview",
     "pack": "evenhub pack",
-    "pack:private": "evenhub pack app.json dist -o world-whisper-g2-v0.5.0.ehpk",
+    "pack:private": "evenhub pack app.json dist -o world-whisper-g2-v0.5.1.ehpk",
     "simulate": "evenhub-simulator http://localhost:5173"
   },
   "dependencies": {

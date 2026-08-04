@@ -103,24 +103,24 @@ test('single tap on a whisper shows a deeper view without new location capture',
   assert.match(harness.shown.at(-1) ?? '', /もう少しだけ/)
 })
 
-test('forward or up slide requests a different perspective', async () => {
+test('backward or down slide requests a different perspective', async () => {
   const harness = createHarness(async () => ({ ok: true, snapshot: context }))
   await harness.controller.start()
   await harness.controller.triggerNotification()
   await harness.controller.handleEvenHubEvent({ sysEvent: { eventSource: 1 } })
 
-  await harness.controller.handleEvenHubEvent({ listEvent: { eventType: 1 } })
+  await harness.controller.handleEvenHubEvent({ listEvent: { eventType: 2 } })
 
   assert.deepEqual(harness.perspectiveIndexes, [0, 1])
   assert.match(harness.shown.at(-1) ?? '', /別の視点 1/)
 })
 
-test('backward or down slide dismisses the current display', async () => {
+test('forward or up slide dismisses the current display', async () => {
   const harness = createHarness(async () => ({ ok: true, snapshot: context }))
   await harness.controller.start()
   await harness.controller.triggerNotification()
 
-  await harness.controller.handleEvenHubEvent({ listEvent: { eventType: 2 } })
+  await harness.controller.handleEvenHubEvent({ listEvent: { eventType: 1 } })
 
   assert.equal(harness.shown.at(-1), '\u00a0')
   assert.match(harness.statuses.at(-1) ?? '', /消去しました/)
@@ -151,4 +151,3 @@ test('double tap remains a temporary development shutdown action', async () => {
 
   assert.equal(harness.counts().shutdownCount, 1)
 })
-

@@ -7,7 +7,7 @@ import { normalizeEvenHubEvent } from '../even/event-normalizer.ts'
 import type { WhisperGenerator } from '../whisper/whisper-generator.ts'
 import { initialAppState, reduceAppState, type AppAction, type AppState } from './state.ts'
 
-const releaseLabel = 'WORLD WHISPER v0.5.0'
+const releaseLabel = 'WORLD WHISPER v0.5.1'
 const clearedContent = '\u00a0'
 
 const initialContent = [
@@ -69,7 +69,7 @@ export class AppController {
       '💡 気づきのヒントがあります',
       '',
       'シングルタップで深掘り',
-      '下スライドで閉じる',
+      '上スライドで飛ばす',
     ].join('\n'))
     this.diagnostics.setStatus('通知済み。G2のシングルタップで深掘りできます。')
   }
@@ -104,11 +104,11 @@ export class AppController {
       case 'click':
         await this.handleSingleTap()
         break
-      case 'scroll-down':
+      case 'scroll-up':
         this.dispatch({ type: 'GESTURE_HANDLED' })
         await this.dismissDisplay()
         break
-      case 'scroll-up':
+      case 'scroll-down':
         await this.showNextPerspective()
         break
       case 'unknown':
