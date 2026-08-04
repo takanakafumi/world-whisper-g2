@@ -6,17 +6,18 @@
     <title>World Whisper</title>
     <style>
       html, body { margin: 0; height: 100%; background: #232323; color: #e5e5e5; font: 14px/1.4 -apple-system, BlinkMacSystemFont, system-ui, sans-serif; touch-action: manipulation; -webkit-text-size-adjust: 100%; overscroll-behavior: none; }
-      #app { display: flex; height: 100%; flex-direction: column; gap: 12px; align-items: center; justify-content: center; padding: 24px; box-sizing: border-box; text-align: center; }
+      #app { display: flex; height: 100%; overflow: auto; flex-direction: column; gap: 12px; align-items: center; justify-content: flex-start; padding: 24px; box-sizing: border-box; text-align: center; }
       .release { border: 1px solid #e5e5e5; border-radius: 999px; padding: 4px 12px; font-weight: 700; letter-spacing: .08em; }
       #diagnostic { width: min(100%, 720px); max-height: 45vh; overflow: auto; margin: 0; padding: 12px; box-sizing: border-box; border: 1px solid #666; border-radius: 8px; background: #181818; text-align: left; white-space: pre-wrap; overflow-wrap: anywhere; }
       button { border: 1px solid #e5e5e5; border-radius: 8px; padding: 10px 16px; background: #333; color: #fff; font: inherit; }
       button:disabled { opacity: .5; }
       #location-diagnostic { width: min(100%, 720px); max-height: 35vh; overflow: auto; margin: 0; padding: 12px; box-sizing: border-box; border: 1px solid #507050; border-radius: 8px; background: #172017; text-align: left; white-space: pre-wrap; overflow-wrap: anywhere; }
+      #sampling-diagnostic { width: min(100%, 720px); max-height: 35vh; overflow: auto; margin: 0; padding: 12px; box-sizing: border-box; border: 1px solid #506070; border-radius: 8px; background: #171c20; text-align: left; white-space: pre-wrap; overflow-wrap: anywhere; }
     </style>
   </head>
   <body>
     <div id="app">
-      <div class="release">WORLD WHISPER v0.5.1</div>
+      <div class="release">WORLD WHISPER v0.6.0</div>
       <div>Phase 2開発操作：スマホから通知と消去を再現します。</div>
       <div>
         <button id="trigger-notification-button" type="button">通知を発生</button>
@@ -24,6 +25,13 @@
       </div>
       <button id="location-diagnostic-button" type="button">現在地と時刻を診断</button>
       <pre id="location-diagnostic">未実行です。診断結果は保存・送信しません。</pre>
+      <div>
+        <button id="sampling-start-button" type="button">サンプリング開始</button>
+        <button id="sampling-stop-button" type="button">サンプリング停止</button>
+      </div>
+      <div>Even Hub SDKの連続位置更新を使った文脈診断です。位置情報は保存・送信しません。</div>
+      <pre id="sampling-diagnostic">取得方式: Even Hub SDK連続位置更新
+状態: 停止中</pre>
       <pre id="diagnostic">状態: 起動準備中</pre>
     </div>
     <script type="module" src="/src/main.ts"></script>

@@ -9,7 +9,7 @@ export interface ContextTimelineOptions {
   maxSamples?: number
   maxAgeMs?: number
   minimumMovementMeters?: number
-  minimumMovingSpeedMetersPerSecond?: number
+  minimumChangeSpeedMetersPerSecond?: number
   dwellThresholdMs?: number
   dwellRadiusMeters?: number
 }
@@ -18,7 +18,7 @@ const defaults: Required<ContextTimelineOptions> = {
   maxSamples: 20,
   maxAgeMs: 30 * 60 * 1000,
   minimumMovementMeters: 10,
-  minimumMovingSpeedMetersPerSecond: 0.5,
+  minimumChangeSpeedMetersPerSecond: 0.5,
   dwellThresholdMs: 5 * 60 * 1000,
   dwellRadiusMeters: 30,
 }
@@ -71,14 +71,14 @@ export class ContextTimeline {
       return geographicDistanceMeters(first, sample) <= tolerance
     })
 
-    const isMoving = totalDistanceMeters >= this.options.minimumMovementMeters &&
-      speedMetersPerSecond >= this.options.minimumMovingSpeedMetersPerSecond
-    const isDwelling = !isMoving &&
+    const hasChanged = totalDistanceMeters >= this.options.minimumMovementMeters &&
+      speedMetersPerSecond >= this.options.minimumChangeSpeedMetersPerSecond
+    const isDwelling = !hasChanged &&
       withinDwellRadius &&
       durationMs >= this.options.dwellThresholdMs
 
     return {
-      state: isMoving ? 'moving' : isDwelling ? 'dwelling' : 'stationary',
+      state: hasChanged ? 'changed' : isDwelling ? 'dwelling' : 'stationary',
       sampleCount: this.samples.length,
       durationMs,
       totalDistanceMeters,

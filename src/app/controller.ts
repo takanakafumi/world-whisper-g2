@@ -7,7 +7,7 @@ import { normalizeEvenHubEvent } from '../even/event-normalizer.ts'
 import type { WhisperGenerator } from '../whisper/whisper-generator.ts'
 import { initialAppState, reduceAppState, type AppAction, type AppState } from './state.ts'
 
-const releaseLabel = 'WORLD WHISPER v0.5.1'
+const releaseLabel = 'WORLD WHISPER v0.6.0'
 const clearedContent = '\u00a0'
 
 const initialContent = [
@@ -30,6 +30,7 @@ export class AppController {
   private readonly diagnostics: DiagnosticsPort
   private readonly contextProvider: ContextProvider
   private readonly whisperGenerator: WhisperGenerator
+  private readonly onShutdown: () => void
   private generationToken = 0
   private lastSnapshot: ContextSnapshot | null = null
   private lastWhisper: string | null = null
@@ -39,11 +40,13 @@ export class AppController {
     diagnostics: DiagnosticsPort,
     contextProvider: ContextProvider,
     whisperGenerator: WhisperGenerator,
+    onShutdown: () => void = () => undefined,
   ) {
     this.display = display
     this.diagnostics = diagnostics
     this.contextProvider = contextProvider
     this.whisperGenerator = whisperGenerator
+    this.onShutdown = onShutdown
   }
 
   async start() {
@@ -225,6 +228,7 @@ export class AppController {
 
   private async shutdown() {
     this.generationToken += 1
+    this.onShutdown()
     this.dispatch({ type: 'SHUTDOWN_STARTED' })
     this.diagnostics.setStatus('G2画面を終了しています…')
     try {

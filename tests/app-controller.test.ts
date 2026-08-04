@@ -13,7 +13,10 @@ const context: ContextSnapshot = {
   timezone: 'Asia/Tokyo',
 }
 
-const createHarness = (capture: () => Promise<ContextCaptureResult>) => {
+const createHarness = (
+  capture: () => Promise<ContextCaptureResult>,
+  onShutdown: () => void = () => undefined,
+) => {
   const created: string[] = []
   const shown: string[] = []
   const statuses: string[] = []
@@ -47,6 +50,7 @@ const createHarness = (capture: () => Promise<ContextCaptureResult>) => {
           : `別の視点 ${index} が見つかりました。`
       },
     },
+    onShutdown,
   )
 
   return {
@@ -144,10 +148,15 @@ test('phone dismiss cancels an in-flight capture and suppresses its result', asy
 })
 
 test('double tap remains a temporary development shutdown action', async () => {
-  const harness = createHarness(async () => ({ ok: true, snapshot: context }))
+  let cleanupCount = 0
+  const harness = createHarness(
+    async () => ({ ok: true, snapshot: context }),
+    () => { cleanupCount += 1 },
+  )
   await harness.controller.start()
 
   await harness.controller.handleEvenHubEvent({ sysEvent: { eventType: 3 } })
 
   assert.equal(harness.counts().shutdownCount, 1)
+  assert.equal(cleanupCount, 1)
 })

@@ -45,12 +45,12 @@ test('suppresses GPS jitter inside the accuracy envelope', () => {
   assert.equal(movement.totalDistanceMeters, 0)
 })
 
-test('classifies meaningful distance and speed as moving', () => {
+test('classifies meaningful distance and speed as a context change', () => {
   const timeline = new ContextTimeline()
   timeline.add(sample(0))
   const movement = timeline.add(sample(1, 35.001, 139))
 
-  assert.equal(movement.state, 'moving')
+  assert.equal(movement.state, 'changed')
   assert.ok(movement.totalDistanceMeters > 100)
   assert.ok(movement.speedMetersPerSecond > 1.5)
 })

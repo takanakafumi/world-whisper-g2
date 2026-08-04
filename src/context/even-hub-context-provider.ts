@@ -7,7 +7,6 @@ import {
 import type {
   ContextCaptureResult,
   ContextProvider,
-  ContextSnapshot,
 } from './context-snapshot.ts'
 
 export interface AppLocationBridge {
@@ -31,6 +30,37 @@ const hourInTimezone = (date: Date, timezone: string) =>
     }).format(date),
   )
 
+export const contextSnapshotFromAppLocation = (
+  location: AppLocation | null,
+  now: () => Date = () => new Date(),
+  timezoneProvider: () => string = () => Intl.DateTimeFormat().resolvedOptions().timeZone,
+): ContextCaptureResult => {
+  if (!location || !isValidCoordinate(location.latitude, location.longitude)) {
+    return {
+      ok: false,
+      reason: 'unavailable',
+      message: '位置情報を取得できませんでした。権限と端末の位置情報設定を確認してください。',
+    }
+  }
+
+  const capturedDate = location.timestamp ? new Date(location.timestamp) : now()
+  const timezone = timezoneProvider()
+  return {
+    ok: true,
+    snapshot: {
+      latitude: location.latitude,
+      longitude: location.longitude,
+      accuracyMeters:
+        location.accuracy !== undefined && Number.isFinite(location.accuracy)
+          ? location.accuracy
+          : null,
+      capturedAt: capturedDate.toISOString(),
+      localHour: hourInTimezone(capturedDate, timezone),
+      timezone,
+    },
+  }
+}
+
 export class EvenHubContextProvider implements ContextProvider {
   private readonly bridge: AppLocationBridge
   private readonly now: () => Date
@@ -51,29 +81,6 @@ export class EvenHubContextProvider implements ContextProvider {
       accuracy: AppLocationAccuracy.High,
       timeoutMs: 10_000,
     })
-
-    if (!location || !isValidCoordinate(location.latitude, location.longitude)) {
-      return {
-        ok: false,
-        reason: 'unavailable',
-        message: '位置情報を取得できませんでした。権限と端末の位置情報設定を確認してください。',
-      }
-    }
-
-    const capturedDate = location.timestamp ? new Date(location.timestamp) : this.now()
-    const timezone = this.timezone()
-    const snapshot: ContextSnapshot = {
-      latitude: location.latitude,
-      longitude: location.longitude,
-      accuracyMeters:
-        location.accuracy !== undefined && Number.isFinite(location.accuracy)
-          ? location.accuracy
-          : null,
-      capturedAt: capturedDate.toISOString(),
-      localHour: hourInTimezone(capturedDate, timezone),
-      timezone,
-    }
-
-    return { ok: true, snapshot }
+    return contextSnapshotFromAppLocation(location, this.now, this.timezone)
   }
 }
