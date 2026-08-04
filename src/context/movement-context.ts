@@ -1,4 +1,4 @@
-export type MovementState = 'unknown' | 'stationary' | 'moving' | 'dwelling'
+export type MovementState = 'unknown' | 'stationary' | 'changed' | 'dwelling'
 
 export interface MovementContext {
   state: MovementState

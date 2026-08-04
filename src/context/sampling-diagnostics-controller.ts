@@ -22,19 +22,19 @@ export class SamplingDiagnosticsController {
   }
 
   start(): void {
-    this.startButton?.addEventListener('click', () => this.session.start())
-    this.stopButton?.addEventListener('click', () => this.session.stop())
+    this.startButton?.addEventListener('click', () => void this.session.start())
+    this.stopButton?.addEventListener('click', () => void this.session.stop())
     this.render(this.session.getState())
   }
 
   render(state: SamplingSessionState): void {
-    if (this.startButton) this.startButton.disabled = state.active
-    if (this.stopButton) this.stopButton.disabled = !state.active
+    if (this.startButton) this.startButton.disabled = state.active || state.transitioning
+    if (this.stopButton) this.stopButton.disabled = !state.active || state.transitioning
     if (!this.output) return
 
     const movement = state.movement
     this.output.textContent = [
-      `サンプリング: ${state.active ? state.capturing ? '取得中' : '実行中' : '停止中'}`,
+      `SDK位置更新: ${state.transitioning ? '切替中' : state.active ? '実行中' : '停止中'}`,
       `判定: ${movement.state}`,
       `サンプル数: ${movement.sampleCount}`,
       `期間: ${seconds(movement.durationMs)}`,

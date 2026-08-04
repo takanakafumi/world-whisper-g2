@@ -71,14 +71,14 @@ export class ContextTimeline {
       return geographicDistanceMeters(first, sample) <= tolerance
     })
 
-    const isMoving = totalDistanceMeters >= this.options.minimumMovementMeters &&
+    const hasChanged = totalDistanceMeters >= this.options.minimumMovementMeters &&
       speedMetersPerSecond >= this.options.minimumMovingSpeedMetersPerSecond
-    const isDwelling = !isMoving &&
+    const isDwelling = !hasChanged &&
       withinDwellRadius &&
       durationMs >= this.options.dwellThresholdMs
 
     return {
-      state: isMoving ? 'moving' : isDwelling ? 'dwelling' : 'stationary',
+      state: hasChanged ? 'changed' : isDwelling ? 'dwelling' : 'stationary',
       sampleCount: this.samples.length,
       durationMs,
       totalDistanceMeters,

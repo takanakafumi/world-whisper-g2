@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
-    "test": "node --experimental-strip-types --test tests/app-controller.test.ts tests/context-timeline.test.ts tests/even-hub-context-provider.test.ts tests/event-normalizer.test.ts tests/g2-display.test.ts tests/interaction-state.test.ts tests/rule-based-whisper-generator.test.ts tests/sampling-session.test.ts tests/state.test.ts",
+    "test": "node --experimental-strip-types --test tests/app-controller.test.ts tests/context-timeline.test.ts tests/even-hub-context-provider.test.ts tests/even-hub-context-update-source.test.ts tests/event-normalizer.test.ts tests/g2-display.test.ts tests/interaction-state.test.ts tests/rule-based-whisper-generator.test.ts tests/sampling-session.test.ts tests/state.test.ts",
     "preview": "vite preview",
     "pack": "evenhub pack",
     "pack:private": "evenhub pack app.json dist -o world-whisper-g2-v0.6.0.ehpk",

@@ -4,6 +4,7 @@ import { AppController } from './app/controller.ts'
 import { DevelopmentControls } from './app/development-controls.ts'
 import { ContextTimeline } from './context/context-timeline.ts'
 import { EvenHubContextProvider } from './context/even-hub-context-provider.ts'
+import { EvenHubContextUpdateSource } from './context/even-hub-context-update-source.ts'
 import { LocationDiagnosticsController } from './context/location-diagnostics-controller.ts'
 import { SamplingDiagnosticsController } from './context/sampling-diagnostics-controller.ts'
 import { SamplingSession } from './context/sampling-session.ts'
@@ -18,7 +19,7 @@ try {
   const bridge = await waitForEvenAppBridge()
   const contextProvider = new EvenHubContextProvider(bridge)
   let samplingDiagnostics: SamplingDiagnosticsController | null = null
-  const samplingSession = new SamplingSession(contextProvider, new ContextTimeline(), {
+  const samplingSession = new SamplingSession(new EvenHubContextUpdateSource(bridge), new ContextTimeline(), {
     onChange: (state) => samplingDiagnostics?.render(state),
   })
   const controller = new AppController(
@@ -47,7 +48,7 @@ try {
   ).start()
 
   bridge.onEvenHubEvent((event) => void controller.handleEvenHubEvent(event))
-  window.addEventListener('pagehide', () => samplingSession.stop(), { once: true })
+  window.addEventListener('pagehide', () => void samplingSession.stop(), { once: true })
   await controller.start()
 } catch (error) {
   diagnostics.reportError(error)

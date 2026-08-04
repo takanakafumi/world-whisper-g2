@@ -14,3 +14,11 @@ export type ContextCaptureResult =
 export interface ContextProvider {
   capture(): Promise<ContextCaptureResult>
 }
+
+export interface ContextUpdateSource {
+  start(
+    onSnapshot: (snapshot: ContextSnapshot) => void,
+    onError: (error: unknown) => void,
+  ): Promise<void>
+  stop(): Promise<void>
+}

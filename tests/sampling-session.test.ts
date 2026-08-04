@@ -2,8 +2,8 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 
 import { ContextTimeline } from '../src/context/context-timeline.ts'
-import type { ContextCaptureResult, ContextSnapshot } from '../src/context/context-snapshot.ts'
-import { SamplingSession, type SamplingScheduler } from '../src/context/sampling-session.ts'
+import type { ContextSnapshot, ContextUpdateSource } from '../src/context/context-snapshot.ts'
+import { SamplingSession } from '../src/context/sampling-session.ts'
 
 const snapshot = (seconds: number, latitude = 35): ContextSnapshot => ({
   latitude,
@@ -14,122 +14,101 @@ const snapshot = (seconds: number, latitude = 35): ContextSnapshot => ({
   timezone: 'Asia/Tokyo',
 })
 
-class FakeScheduler implements SamplingScheduler {
-  callback: (() => void) | null = null
-  cleared = false
+class FakeSource implements ContextUpdateSource {
+  starts = 0
+  stops = 0
+  onSnapshot: ((value: ContextSnapshot) => void) | null = null
+  onError: ((error: unknown) => void) | null = null
 
-  setInterval(callback: () => void): unknown {
-    this.callback = callback
-    return 1
+  async start(
+    onSnapshot: (value: ContextSnapshot) => void,
+    onError: (error: unknown) => void,
+  ): Promise<void> {
+    this.starts += 1
+    this.onSnapshot = onSnapshot
+    this.onError = onError
   }
 
-  clearInterval(): void {
-    this.cleared = true
-    this.callback = null
+  async stop(): Promise<void> {
+    this.stops += 1
+    this.onSnapshot = null
+    this.onError = null
+  }
+
+  emit(value: ContextSnapshot): void {
+    this.onSnapshot?.(value)
   }
 }
 
-test('starts immediately, samples repeatedly, and stops cleanly', async () => {
-  const scheduler = new FakeScheduler()
-  const results: ContextCaptureResult[] = [
-    { ok: true, snapshot: snapshot(0) },
-    { ok: true, snapshot: snapshot(20, 35.0002) },
-  ]
-  let captures = 0
-  const session = new SamplingSession(
-    { async capture() { return results[captures++] } },
-    new ContextTimeline(),
-    { scheduler },
-  )
+test('starts the SDK source once and consumes pushed snapshots', async () => {
+  const source = new FakeSource()
+  const session = new SamplingSession(source, new ContextTimeline())
 
-  session.start()
-  await session.captureOnce()
-  assert.equal(captures, 1, 'overlapping manual capture is ignored')
-  await new Promise((resolve) => setTimeout(resolve, 0))
-  await session.captureOnce()
+  await session.start()
+  await session.start()
+  source.emit(snapshot(0))
+  source.emit(snapshot(20, 35.0002))
 
+  assert.equal(source.starts, 1)
   assert.equal(session.getState().movement.sampleCount, 2)
-  session.stop()
-  assert.equal(session.getState().active, false)
-  assert.equal(scheduler.cleared, true)
+  assert.equal(session.getState().active, true)
 })
 
-test('suppresses a capture result that resolves after stop', async () => {
-  let resolveCapture!: (result: ContextCaptureResult) => void
-  const capture = new Promise<ContextCaptureResult>((resolve) => { resolveCapture = resolve })
+test('stops the SDK source and suppresses events from an old subscription', async () => {
+  const source = new FakeSource()
   const timeline = new ContextTimeline()
-  const session = new SamplingSession({ capture: () => capture }, timeline, {
-    scheduler: new FakeScheduler(),
-  })
+  const session = new SamplingSession(source, timeline)
+  await session.start()
+  const staleListener = source.onSnapshot
 
-  session.start()
-  session.stop()
-  resolveCapture({ ok: true, snapshot: snapshot(0) })
-  await capture
-  await new Promise((resolve) => setTimeout(resolve, 0))
+  await session.stop()
+  staleListener?.(snapshot(0))
 
+  assert.equal(source.stops, 1)
   assert.equal(timeline.getSamples().length, 0)
+  assert.equal(session.getState().active, false)
 })
 
-test('recovers from provider failures without stopping the session', async () => {
-  let attempt = 0
-  const session = new SamplingSession({
-    async capture() {
-      attempt += 1
-      return attempt === 1
-        ? { ok: false, reason: 'unavailable', message: 'location unavailable' }
-        : { ok: true, snapshot: snapshot(10) }
-    },
-  }, new ContextTimeline(), { scheduler: new FakeScheduler() })
+test('reports source errors without terminating an active session', async () => {
+  const source = new FakeSource()
+  const session = new SamplingSession(source, new ContextTimeline())
+  await session.start()
 
-  session.start()
-  await new Promise((resolve) => setTimeout(resolve, 0))
+  source.onError?.(new Error('location unavailable'))
   assert.equal(session.getState().error, 'location unavailable')
   assert.equal(session.getState().active, true)
 
-  await session.captureOnce()
+  source.emit(snapshot(10))
   assert.equal(session.getState().error, null)
-  assert.equal(session.getState().movement.sampleCount, 1)
 })
 
-test('start is idempotent and validates the interval', () => {
-  const scheduler = new FakeScheduler()
-  let schedules = 0
-  scheduler.setInterval = (callback) => {
-    schedules += 1
-    scheduler.callback = callback
-    return 1
-  }
-  const session = new SamplingSession(
-    { async capture() { return { ok: false, reason: 'unavailable', message: 'no fix' } } },
-    new ContextTimeline(),
-    { scheduler },
-  )
+test('reports SDK start and stop failures', async () => {
+  const startFailure = new SamplingSession({
+    async start() { throw new Error('start failed') },
+    async stop() {},
+  }, new ContextTimeline())
+  await startFailure.start()
+  assert.equal(startFailure.getState().active, false)
+  assert.equal(startFailure.getState().error, 'start failed')
 
-  session.start()
-  session.start()
-  assert.equal(schedules, 1)
-  assert.throws(() => new SamplingSession(
-    { async capture() { return { ok: false, reason: 'unavailable', message: 'no fix' } } },
-    new ContextTimeline(),
-    { intervalMs: 0 },
-  ), RangeError)
-  session.stop()
+  const stopFailure = new SamplingSession({
+    async start() {},
+    async stop() { throw new Error('stop failed') },
+  }, new ContextTimeline())
+  await stopFailure.start()
+  await stopFailure.stop()
+  assert.equal(stopFailure.getState().active, false)
+  assert.equal(stopFailure.getState().error, 'stop failed')
 })
 
 test('a restarted session begins with an empty timeline', async () => {
-  let seconds = 0
-  const session = new SamplingSession(
-    { async capture() { return { ok: true, snapshot: snapshot(seconds += 10) } } },
-    new ContextTimeline(),
-    { scheduler: new FakeScheduler() },
-  )
-
-  session.start()
-  await new Promise((resolve) => setTimeout(resolve, 0))
+  const source = new FakeSource()
+  const session = new SamplingSession(source, new ContextTimeline())
+  await session.start()
+  source.emit(snapshot(10))
   assert.equal(session.getState().movement.sampleCount, 1)
-  session.stop()
-  session.start()
+
+  await session.stop()
+  await session.start()
   assert.equal(session.getState().movement.sampleCount, 0)
-  session.stop()
 })

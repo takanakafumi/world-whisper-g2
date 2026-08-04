@@ -48,6 +48,8 @@ Even G2（BLE）→ スマートフォン／Even App Plugin（GPS・時刻・速
 
 クライアント内部では、Even Hub SDKの実機差を吸収するアダプター、アプリ状態、G2表示、診断UI、文脈取得、ささやき生成を分離する。Phase 1では `ContextSnapshot → WhisperGenerator → G2表示` を基本フローとし、最初はルールベース生成、後からHTTPSバックエンド経由のLLM生成へ置き換える。APIキーや位置履歴はGitHub Pagesのクライアントへ保存しない。
 
+端末・OSに密接な機能はSDK-firstを原則とし、Even Hub SDKに標準機能がある場合は自前実装より優先する。アプリ固有コードはSDKアダプターと文脈解釈へ限定し、位置更新のスケジューリング、距離フィルター、開始・停止はSDKへ委ねる。Google Maps Platformなどの外部APIは移動検出ではなく、周辺施設や場所の意味づけが必要になった段階で、クライアントへAPIキーを置かないバックエンド構成として検討する。
+
 位置情報はブラウザ標準APIではなく、`location`権限を宣言したEven Hub SDKの`getAppLocation()`から明示操作時に1回取得する。raw位置情報はPhase 1では保存・外部送信せず、メモリ上の`ContextSnapshot`としてのみ扱う。権限プロンプトは`.ehpk`のPrivate Buildで検証する。
 
 ## 7. 段階開発
