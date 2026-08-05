@@ -5,10 +5,12 @@ import type { DiagnosticsPort } from '../diagnostics/diagnostics-view.ts'
 import type { G2DisplayPort } from '../even/g2-display.ts'
 import { normalizeEvenHubEvent } from '../even/event-normalizer.ts'
 import type { WhisperGenerator } from '../whisper/whisper-generator.ts'
+import { AutoDismissTimer, type AutoDismissPort } from './auto-dismiss-timer.ts'
 import { initialAppState, reduceAppState, type AppAction, type AppState } from './state.ts'
 
-const releaseLabel = 'WORLD WHISPER v0.6.0'
+const releaseLabel = 'WORLD WHISPER v0.7.0'
 const clearedContent = '\u00a0'
+const autoDismissDelayMs = 5_000
 
 const initialContent = [
   releaseLabel,
@@ -31,6 +33,8 @@ export class AppController {
   private readonly contextProvider: ContextProvider
   private readonly whisperGenerator: WhisperGenerator
   private readonly onShutdown: () => void
+  private readonly autoDismiss: AutoDismissPort
+  private autoDismissEnabled = true
   private generationToken = 0
   private lastSnapshot: ContextSnapshot | null = null
   private lastWhisper: string | null = null
@@ -41,12 +45,14 @@ export class AppController {
     contextProvider: ContextProvider,
     whisperGenerator: WhisperGenerator,
     onShutdown: () => void = () => undefined,
+    autoDismiss: AutoDismissPort = new AutoDismissTimer(),
   ) {
     this.display = display
     this.diagnostics = diagnostics
     this.contextProvider = contextProvider
     this.whisperGenerator = whisperGenerator
     this.onShutdown = onShutdown
+    this.autoDismiss = autoDismiss
   }
 
   async start() {
@@ -62,6 +68,7 @@ export class AppController {
       return
     }
 
+    this.autoDismiss.cancel()
     this.generationToken += 1
     this.lastSnapshot = null
     this.lastWhisper = null
@@ -79,6 +86,7 @@ export class AppController {
 
   async dismissDisplay() {
     if (this.state.status !== 'ready') return
+    this.autoDismiss.cancel()
     const phase = this.state.interaction.phase
     if (phase === 'idle' || phase === 'dismissed') {
       this.diagnostics.setStatus('消去できる表示はありません。')
@@ -118,6 +126,19 @@ export class AppController {
         this.diagnostics.setStatus(`未判定イベント: ${String(gesture.reportedEventType)}`)
         break
     }
+  }
+
+  setAutoDismissEnabled(enabled: boolean): void {
+    this.autoDismissEnabled = enabled
+    if (!enabled) {
+      this.autoDismiss.cancel()
+      this.diagnostics.setStatus('5秒自動消灯を無効にしました。')
+      return
+    }
+    if (['primary', 'deepened', 'next'].includes(this.state.interaction.phase)) {
+      this.scheduleAutoDismiss()
+    }
+    this.diagnostics.setStatus('5秒自動消灯を有効にしました。')
   }
 
   private async handleSingleTap() {
@@ -166,6 +187,7 @@ export class AppController {
       if (!this.isGenerationActive(token, 'notified')) return
       this.dispatch({ type: 'WHISPER_SUCCEEDED' })
       this.dispatch({ type: 'PRIMARY_SHOWN' })
+      this.scheduleAutoDismiss()
       this.diagnostics.setStatus(`初回表示: ${this.lastWhisper}`)
     } catch (error) {
       await this.handleGenerationError(token, error)
@@ -180,6 +202,7 @@ export class AppController {
     const deepened = limitText(`もう少しだけ：${this.lastWhisper}`)
     await this.showSafely([releaseLabel, '', deepened].join('\n'))
     this.dispatch({ type: 'DEEPENED' })
+    this.scheduleAutoDismiss()
     this.diagnostics.setStatus(`深掘り表示: ${deepened}`)
   }
 
@@ -200,6 +223,7 @@ export class AppController {
     })
     await this.showSafely([releaseLabel, '', this.lastWhisper].join('\n'))
     this.dispatch({ type: 'NEXT_SHOWN' })
+    this.scheduleAutoDismiss()
     this.diagnostics.setStatus(`別視点 ${nextIndex + 1}: ${this.lastWhisper}`)
   }
 
@@ -228,6 +252,7 @@ export class AppController {
 
   private async shutdown() {
     this.generationToken += 1
+    this.autoDismiss.cancel()
     this.onShutdown()
     this.dispatch({ type: 'SHUTDOWN_STARTED' })
     this.diagnostics.setStatus('G2画面を終了しています…')
@@ -243,5 +268,14 @@ export class AppController {
 
   private dispatch(action: AppAction) {
     this.state = reduceAppState(this.state, action)
+  }
+
+  private scheduleAutoDismiss(): void {
+    if (!this.autoDismissEnabled) return
+    this.autoDismiss.schedule(() => {
+      if (this.state.status !== 'ready') return
+      if (!['primary', 'deepened', 'next'].includes(this.state.interaction.phase)) return
+      void this.dismissDisplay()
+    }, autoDismissDelayMs)
   }
 }
