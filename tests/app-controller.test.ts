@@ -4,6 +4,7 @@ import test from 'node:test'
 import { AppController } from '../src/app/controller.ts'
 import type { AutoDismissPort } from '../src/app/auto-dismiss-timer.ts'
 import type { ContextCaptureResult, ContextSnapshot } from '../src/context/context-snapshot.ts'
+import type { DeepenIntent } from '../src/whisper/whisper-generator.ts'
 
 const context: ContextSnapshot = {
   latitude: 35.6812,
@@ -23,6 +24,7 @@ const createHarness = (
   const shown: string[] = []
   const statuses: string[] = []
   const perspectiveIndexes: number[] = []
+  const deepenIntents: Array<DeepenIntent | undefined> = []
   let shutdownCount = 0
   let captureCount = 0
 
@@ -47,6 +49,8 @@ const createHarness = (
       generate: (_snapshot, options) => {
         const index = options?.perspectiveIndex ?? 0
         perspectiveIndexes.push(index)
+        deepenIntents.push(options?.deepenIntent)
+        if (options?.deepenIntent) return `深掘り結果: ${options.deepenIntent}`
         return index === 0
           ? '夕暮れの気配が、道をやわらかく包んでいます。'
           : `別の視点 ${index} が見つかりました。`
@@ -62,6 +66,7 @@ const createHarness = (
     shown,
     statuses,
     perspectiveIndexes,
+    deepenIntents,
     counts: () => ({ shutdownCount, captureCount }),
   }
 }
@@ -98,7 +103,7 @@ test('single tap deepens a notification into a primary whisper', async () => {
   assert.match(harness.shown.at(-1) ?? '', /夕暮れの気配/)
 })
 
-test('single tap on a whisper shows a deeper view without new location capture', async () => {
+test('single tap on a whisper opens choices and confirms the selected intent', async () => {
   const harness = createHarness(async () => ({ ok: true, snapshot: context }))
   await harness.controller.start()
   await harness.controller.triggerNotification()
@@ -106,8 +111,14 @@ test('single tap on a whisper shows a deeper view without new location capture',
 
   await harness.controller.handleEvenHubEvent({ sysEvent: { eventSource: 2 } })
 
+  assert.match(harness.shown.at(-1) ?? '', /この場所の背景/)
+  await harness.controller.handleEvenHubEvent({ listEvent: { eventType: 2 } })
+  assert.match(harness.shown.at(-1) ?? '', /› 別の見方/)
+  await harness.controller.handleEvenHubEvent({ sysEvent: { eventSource: 2 } })
+
   assert.equal(harness.counts().captureCount, 1)
-  assert.match(harness.shown.at(-1) ?? '', /もう少しだけ/)
+  assert.equal(harness.deepenIntents.at(-1), 'alternative')
+  assert.match(harness.shown.at(-1) ?? '', /深掘り結果: alternative/)
 })
 
 test('backward or down slide requests a different perspective', async () => {
@@ -164,7 +175,7 @@ test('double tap remains a temporary development shutdown action', async () => {
   assert.equal(cleanupCount, 1)
 })
 
-test('primary, deepen, and next displays receive fresh auto-dismiss timers', async () => {
+test('primary, choices, deepened, and next displays receive fresh auto-dismiss timers', async () => {
   const callbacks: Array<() => void> = []
   let cancelCount = 0
   const harness = createHarness(
@@ -182,9 +193,10 @@ test('primary, deepen, and next displays receive fresh auto-dismiss timers', asy
   await harness.controller.triggerNotification()
   await harness.controller.handleEvenHubEvent({ sysEvent: { eventSource: 1 } })
   await harness.controller.handleEvenHubEvent({ sysEvent: { eventSource: 1 } })
+  await harness.controller.handleEvenHubEvent({ sysEvent: { eventSource: 1 } })
   await harness.controller.handleEvenHubEvent({ listEvent: { eventType: 2 } })
 
-  assert.equal(callbacks.length, 3)
+  assert.equal(callbacks.length, 4)
   callbacks.at(-1)!()
   await new Promise((resolve) => setTimeout(resolve, 0))
   assert.equal(harness.shown.at(-1), '\u00a0')

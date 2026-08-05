@@ -1,5 +1,9 @@
 import type { ContextSnapshot } from '../context/context-snapshot.ts'
-import type { WhisperGenerationOptions, WhisperGenerator } from './whisper-generator.ts'
+import type {
+  DeepenIntent,
+  WhisperGenerationOptions,
+  WhisperGenerator,
+} from './whisper-generator.ts'
 
 export const MAX_WHISPER_CHARACTERS = 50
 
@@ -26,19 +30,32 @@ const WHISPERS = {
   ],
 } as const
 
+const DEEPENED_WHISPERS: Record<DeepenIntent, string> = {
+  background: 'この場所にも、今の景色へ続く時間の積み重なりがあります。',
+  alternative: '見えているものより、見落としているものを探してみませんか。',
+  reflection: 'この景色のどこに、いまの自分の気持ちが重なりますか。',
+}
+
 export class RuleBasedWhisperGenerator implements WhisperGenerator {
   generate(snapshot: ContextSnapshot, options: WhisperGenerationOptions = {}): string {
     validateSnapshot(snapshot)
 
+    if (options.deepenIntent) {
+      return validateLength(DEEPENED_WHISPERS[options.deepenIntent])
+    }
+
     const candidates = selectWhispers(snapshot.localHour)
     const requestedIndex = options.perspectiveIndex ?? 0
     const whisper = candidates[normalizeIndex(requestedIndex, candidates.length)]
-    if (Array.from(whisper).length > MAX_WHISPER_CHARACTERS) {
-      throw new Error('Generated whisper exceeds the character limit')
-    }
-
-    return whisper
+    return validateLength(whisper)
   }
+}
+
+function validateLength(whisper: string): string {
+  if (Array.from(whisper).length > MAX_WHISPER_CHARACTERS) {
+    throw new Error('Generated whisper exceeds the character limit')
+  }
+  return whisper
 }
 
 function selectWhispers(localHour: number): readonly string[] {

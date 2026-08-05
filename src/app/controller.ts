@@ -4,13 +4,19 @@ import type { ContextProvider, ContextSnapshot } from '../context/context-snapsh
 import type { DiagnosticsPort } from '../diagnostics/diagnostics-view.ts'
 import type { G2DisplayPort } from '../even/g2-display.ts'
 import { normalizeEvenHubEvent } from '../even/event-normalizer.ts'
-import type { WhisperGenerator } from '../whisper/whisper-generator.ts'
+import type { DeepenIntent, WhisperGenerator } from '../whisper/whisper-generator.ts'
 import { AutoDismissTimer, type AutoDismissPort } from './auto-dismiss-timer.ts'
 import { initialAppState, reduceAppState, type AppAction, type AppState } from './state.ts'
 
-const releaseLabel = 'WORLD WHISPER v0.8.0'
+const releaseLabel = 'WORLD WHISPER v0.9.0'
 const clearedContent = '\u00a0'
 const autoDismissDelayMs = 5_000
+
+const deepeningChoices: ReadonlyArray<{ intent: DeepenIntent; label: string }> = [
+  { intent: 'background', label: 'この場所の背景' },
+  { intent: 'alternative', label: '別の見方' },
+  { intent: 'reflection', label: '自分への問い' },
+]
 
 const initialContent = [
   releaseLabel,
@@ -120,7 +126,8 @@ export class AppController {
         await this.dismissDisplay()
         break
       case 'scroll-down':
-        await this.showNextPerspective()
+        if (this.state.interaction.phase === 'choices') await this.selectNextDeepeningChoice()
+        else await this.showNextPerspective()
         break
       case 'unknown':
         this.diagnostics.setStatus(`未判定イベント: ${String(gesture.reportedEventType)}`)
@@ -135,7 +142,7 @@ export class AppController {
       this.diagnostics.setStatus('5秒自動消灯を無効にしました。')
       return
     }
-    if (['primary', 'deepened', 'next'].includes(this.state.interaction.phase)) {
+    if (['primary', 'choices', 'deepened', 'next'].includes(this.state.interaction.phase)) {
       this.scheduleAutoDismiss()
     }
     this.diagnostics.setStatus('5秒自動消灯を有効にしました。')
@@ -163,7 +170,11 @@ export class AppController {
       case 'next':
       case 'deepened':
         this.dispatch({ type: 'GESTURE_HANDLED' })
-        await this.showDeepenedWhisper()
+        await this.showDeepeningChoices()
+        break
+      case 'choices':
+        this.dispatch({ type: 'GESTURE_HANDLED' })
+        await this.confirmDeepeningChoice()
         break
       default:
         this.diagnostics.setStatus('先にスマホ画面の「通知を発生」を押してください。')
@@ -201,16 +212,52 @@ export class AppController {
     }
   }
 
-  private async showDeepenedWhisper() {
-    if (!this.lastWhisper) {
+  private async showDeepeningChoices() {
+    if (!this.lastWhisper || !this.lastSnapshot) {
       this.diagnostics.setStatus('深掘りできるささやきがありません。')
       return
     }
-    const deepened = limitText(`もう少しだけ：${this.lastWhisper}`)
-    await this.showSafely([releaseLabel, '', deepened].join('\n'))
+    this.dispatch({ type: 'DEEPENING_CHOICES_OPENED' })
+    await this.renderDeepeningChoices()
+    this.scheduleAutoDismiss()
+    this.diagnostics.setStatus('深掘り候補を表示しました。下スライドで選び、タップで決定します。')
+  }
+
+  private async selectNextDeepeningChoice() {
+    this.dispatch({ type: 'GESTURE_HANDLED' })
+    this.dispatch({ type: 'NEXT_DEEPENING_CHOICE', choiceCount: deepeningChoices.length })
+    await this.renderDeepeningChoices()
+    this.scheduleAutoDismiss()
+    const choice = deepeningChoices[this.state.interaction.selectedChoiceIndex]
+    this.diagnostics.setStatus(`深掘り候補: ${choice.label}`)
+  }
+
+  private async confirmDeepeningChoice() {
+    if (!this.lastSnapshot) {
+      this.diagnostics.setStatus('深掘りできる文脈がありません。')
+      return
+    }
+    const choice = deepeningChoices[this.state.interaction.selectedChoiceIndex]
+    this.lastWhisper = this.whisperGenerator.generate(this.lastSnapshot, {
+      deepenIntent: choice.intent,
+    })
+    await this.showSafely([releaseLabel, '', limitText(this.lastWhisper)].join('\n'))
     this.dispatch({ type: 'DEEPENED' })
     this.scheduleAutoDismiss()
-    this.diagnostics.setStatus(`深掘り表示: ${deepened}`)
+    this.diagnostics.setStatus(`深掘り「${choice.label}」: ${this.lastWhisper}`)
+  }
+
+  private async renderDeepeningChoices() {
+    const selectedIndex = this.state.interaction.selectedChoiceIndex
+    const choices = deepeningChoices.map((choice, index) =>
+      `${index === selectedIndex ? '›' : ' '} ${choice.label}`)
+    await this.showSafely([
+      releaseLabel,
+      '深掘りを選ぶ',
+      ...choices,
+      '',
+      '下:選ぶ  タップ:決定  上:閉じる',
+    ].join('\n'))
   }
 
   private async showNextPerspective() {
@@ -281,7 +328,7 @@ export class AppController {
     if (!this.autoDismissEnabled) return
     this.autoDismiss.schedule(() => {
       if (this.state.status !== 'ready') return
-      if (!['primary', 'deepened', 'next'].includes(this.state.interaction.phase)) return
+      if (!['primary', 'choices', 'deepened', 'next'].includes(this.state.interaction.phase)) return
       void this.dismissDisplay()
     }, autoDismissDelayMs)
   }

@@ -16,6 +16,7 @@ test('tracks ready, event, and gesture state', () => {
     interaction: {
       phase: 'idle',
       perspectiveIndex: 0,
+      selectedChoiceIndex: 0,
     },
     lastError: undefined,
   })
@@ -30,8 +31,25 @@ test('tracks Phase 2 interaction transitions', () => {
 
   assert.equal(notified.interaction.phase, 'notified')
   assert.equal(primary.interaction.phase, 'primary')
-  assert.deepEqual(next.interaction, { phase: 'next', perspectiveIndex: 1 })
+  assert.deepEqual(next.interaction, {
+    phase: 'next',
+    perspectiveIndex: 1,
+    selectedChoiceIndex: 0,
+  })
   assert.equal(dismissed.interaction.phase, 'dismissed')
+})
+
+test('tracks deepening menu selection and confirmation', () => {
+  const ready = reduceAppState(initialAppState, { type: 'READY' })
+  const notified = reduceAppState(ready, { type: 'NOTIFICATION_TRIGGERED' })
+  const primary = reduceAppState(notified, { type: 'PRIMARY_SHOWN' })
+  const choices = reduceAppState(primary, { type: 'DEEPENING_CHOICES_OPENED' })
+  const selected = reduceAppState(choices, { type: 'NEXT_DEEPENING_CHOICE', choiceCount: 3 })
+  const deepened = reduceAppState(selected, { type: 'DEEPENED' })
+
+  assert.equal(choices.interaction.phase, 'choices')
+  assert.equal(selected.interaction.selectedChoiceIndex, 1)
+  assert.equal(deepened.interaction.phase, 'deepened')
 })
 
 test('tracks whisper generation without blocking shutdown', () => {
