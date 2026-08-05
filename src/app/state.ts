@@ -21,6 +21,8 @@ export type AppAction =
   | { type: 'PRIMARY_SHOWN' }
   | { type: 'DEEPENING_CHOICES_OPENED' }
   | { type: 'NEXT_DEEPENING_CHOICE'; choiceCount: number }
+  | { type: 'PREVIOUS_DEEPENING_CHOICE'; choiceCount: number }
+  | { type: 'DEEPENING_CHOICES_CANCELLED' }
   | { type: 'DEEPENED' }
   | { type: 'NEXT_SHOWN' }
   | { type: 'DISPLAY_DISMISSED' }
@@ -66,6 +68,19 @@ export const reduceAppState = (state: AppState, action: AppAction): AppState => 
           type: 'SELECT_NEXT_CHOICE',
           choiceCount: action.choiceCount,
         }),
+      }
+    case 'PREVIOUS_DEEPENING_CHOICE':
+      return {
+        ...state,
+        interaction: transitionInteraction(state.interaction, {
+          type: 'SELECT_PREVIOUS_CHOICE',
+          choiceCount: action.choiceCount,
+        }),
+      }
+    case 'DEEPENING_CHOICES_CANCELLED':
+      return {
+        ...state,
+        interaction: transitionInteraction(state.interaction, { type: 'CANCEL_CHOICES' }),
       }
     case 'DEEPENED':
       return { ...state, interaction: transitionInteraction(state.interaction, { type: 'DEEPEN' }) }

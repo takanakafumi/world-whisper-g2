@@ -34,10 +34,6 @@ try {
     diagnostics,
     contextProvider,
     new RuleBasedWhisperGenerator(),
-    () => {
-      observationLog.clear()
-      void samplingSession.stop()
-    },
   )
   new LocationDiagnosticsController(
     '#location-diagnostic-button',

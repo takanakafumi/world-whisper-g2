@@ -17,7 +17,6 @@ const context: ContextSnapshot = {
 
 const createHarness = (
   capture: () => Promise<ContextCaptureResult>,
-  onShutdown: () => void = () => undefined,
   autoDismiss: AutoDismissPort = { schedule: () => undefined, cancel: () => undefined },
 ) => {
   const created: string[] = []
@@ -56,7 +55,6 @@ const createHarness = (
           : `別の視点 ${index} が見つかりました。`
       },
     },
-    onShutdown,
     autoDismiss,
   )
 
@@ -161,26 +159,66 @@ test('phone dismiss cancels an in-flight capture and suppresses its result', asy
   assert.equal(harness.shown.at(-1), '\u00a0')
 })
 
-test('double tap remains a temporary development shutdown action', async () => {
-  let cleanupCount = 0
-  const harness = createHarness(
-    async () => ({ ok: true, snapshot: context }),
-    () => { cleanupCount += 1 },
-  )
+test('double tap has no app action outside the choice menu', async () => {
+  const harness = createHarness(async () => ({ ok: true, snapshot: context }))
   await harness.controller.start()
 
   await harness.controller.handleEvenHubEvent({ sysEvent: { eventType: 3 } })
 
-  assert.equal(harness.counts().shutdownCount, 1)
-  assert.equal(cleanupCount, 1)
+  assert.equal(harness.counts().shutdownCount, 0)
+  assert.match(harness.statuses.at(-1) ?? '', /長押しで終了/)
 })
 
-test('primary, choices, deepened, and next displays receive fresh auto-dismiss timers', async () => {
+test('choice navigation pauses auto-dismiss and supports both directions', async () => {
   const callbacks: Array<() => void> = []
   let cancelCount = 0
   const harness = createHarness(
     async () => ({ ok: true, snapshot: context }),
-    () => undefined,
+    {
+      schedule: (callback) => { callbacks.push(callback) },
+      cancel: () => { cancelCount += 1 },
+    },
+  )
+  await harness.controller.start()
+  await harness.controller.triggerNotification()
+  await harness.controller.handleEvenHubEvent({ sysEvent: { eventSource: 1 } })
+  await harness.controller.handleEvenHubEvent({ sysEvent: { eventSource: 1 } })
+
+  assert.equal(callbacks.length, 1)
+  assert.equal(harness.controller.getState().interaction.selectedChoiceIndex, 0)
+  await harness.controller.handleEvenHubEvent({ listEvent: { eventType: 2 } })
+  assert.equal(harness.controller.getState().interaction.selectedChoiceIndex, 1)
+  await harness.controller.handleEvenHubEvent({ listEvent: { eventType: 1 } })
+  assert.equal(harness.controller.getState().interaction.selectedChoiceIndex, 0)
+  assert.equal(callbacks.length, 1)
+  assert.ok(cancelCount >= 2)
+})
+
+test('double tap closes choices, restores the whisper, and starts a fresh timer', async () => {
+  const callbacks: Array<() => void> = []
+  const harness = createHarness(
+    async () => ({ ok: true, snapshot: context }),
+    { schedule: (callback) => { callbacks.push(callback) }, cancel: () => undefined },
+  )
+  await harness.controller.start()
+  await harness.controller.triggerNotification()
+  await harness.controller.handleEvenHubEvent({ sysEvent: { eventSource: 1 } })
+  const primary = harness.shown.at(-1)
+  await harness.controller.handleEvenHubEvent({ sysEvent: { eventSource: 1 } })
+
+  await harness.controller.handleEvenHubEvent({ sysEvent: { eventType: 3 } })
+
+  assert.equal(harness.controller.getState().interaction.phase, 'primary')
+  assert.equal(harness.shown.at(-1), primary)
+  assert.equal(callbacks.length, 2)
+  assert.equal(harness.counts().shutdownCount, 0)
+})
+
+test('primary, deepened, and next displays receive fresh auto-dismiss timers', async () => {
+  const callbacks: Array<() => void> = []
+  let cancelCount = 0
+  const harness = createHarness(
+    async () => ({ ok: true, snapshot: context }),
     {
       schedule: (callback, delayMs) => {
         assert.equal(delayMs, 5_000)
@@ -196,7 +234,7 @@ test('primary, choices, deepened, and next displays receive fresh auto-dismiss t
   await harness.controller.handleEvenHubEvent({ sysEvent: { eventSource: 1 } })
   await harness.controller.handleEvenHubEvent({ listEvent: { eventType: 2 } })
 
-  assert.equal(callbacks.length, 4)
+  assert.equal(callbacks.length, 3)
   callbacks.at(-1)!()
   await new Promise((resolve) => setTimeout(resolve, 0))
   assert.equal(harness.shown.at(-1), '\u00a0')
@@ -208,7 +246,6 @@ test('auto-dismiss can be disabled and re-enabled for the current display', asyn
   let cancelCount = 0
   const harness = createHarness(
     async () => ({ ok: true, snapshot: context }),
-    () => undefined,
     {
       schedule: (callback) => { callbacks.push(callback) },
       cancel: () => { cancelCount += 1 },

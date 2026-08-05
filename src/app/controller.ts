@@ -23,7 +23,7 @@ const initialContent = [
   'World Whisper',
   '',
   '開発画面の「通知を発生」から開始します。',
-  'ダブルタップ: 開発用終了',
+  '長押し: 終了確認',
 ].join('\n')
 
 const errorMessage = (error: unknown) =>
@@ -38,7 +38,6 @@ export class AppController {
   private readonly diagnostics: DiagnosticsPort
   private readonly contextProvider: ContextProvider
   private readonly whisperGenerator: WhisperGenerator
-  private readonly onShutdown: () => void
   private readonly autoDismiss: AutoDismissPort
   private autoDismissEnabled = true
   private generationToken = 0
@@ -50,14 +49,12 @@ export class AppController {
     diagnostics: DiagnosticsPort,
     contextProvider: ContextProvider,
     whisperGenerator: WhisperGenerator,
-    onShutdown: () => void = () => undefined,
     autoDismiss: AutoDismissPort = new AutoDismissTimer(),
   ) {
     this.display = display
     this.diagnostics = diagnostics
     this.contextProvider = contextProvider
     this.whisperGenerator = whisperGenerator
-    this.onShutdown = onShutdown
     this.autoDismiss = autoDismiss
   }
 
@@ -112,7 +109,12 @@ export class AppController {
     this.diagnostics.recordEvent(this.state, gesture.reportedEventType, event)
 
     if (gesture.kind === 'double-click' && this.state.status === 'ready') {
-      await this.shutdown()
+      if (this.state.interaction.phase === 'choices') {
+        this.dispatch({ type: 'GESTURE_HANDLED' })
+        await this.cancelDeepeningChoices()
+      } else {
+        this.diagnostics.setStatus('ダブルタップ操作はありません。長押しで終了できます。')
+      }
       return
     }
     if (this.state.status !== 'ready') return
@@ -123,7 +125,8 @@ export class AppController {
         break
       case 'scroll-up':
         this.dispatch({ type: 'GESTURE_HANDLED' })
-        await this.dismissDisplay()
+        if (this.state.interaction.phase === 'choices') await this.selectPreviousDeepeningChoice()
+        else await this.dismissDisplay()
         break
       case 'scroll-down':
         if (this.state.interaction.phase === 'choices') await this.selectNextDeepeningChoice()
@@ -142,7 +145,7 @@ export class AppController {
       this.diagnostics.setStatus('5秒自動消灯を無効にしました。')
       return
     }
-    if (['primary', 'choices', 'deepened', 'next'].includes(this.state.interaction.phase)) {
+    if (['primary', 'deepened', 'next'].includes(this.state.interaction.phase)) {
       this.scheduleAutoDismiss()
     }
     this.diagnostics.setStatus('5秒自動消灯を有効にしました。')
@@ -218,18 +221,32 @@ export class AppController {
       return
     }
     this.dispatch({ type: 'DEEPENING_CHOICES_OPENED' })
+    this.autoDismiss.cancel()
     await this.renderDeepeningChoices()
-    this.scheduleAutoDismiss()
-    this.diagnostics.setStatus('深掘り候補を表示しました。下スライドで選び、タップで決定します。')
+    this.diagnostics.setStatus('深掘り候補を表示しました。上下で選び、タップで決定します。')
   }
 
   private async selectNextDeepeningChoice() {
     this.dispatch({ type: 'GESTURE_HANDLED' })
     this.dispatch({ type: 'NEXT_DEEPENING_CHOICE', choiceCount: deepeningChoices.length })
     await this.renderDeepeningChoices()
-    this.scheduleAutoDismiss()
     const choice = deepeningChoices[this.state.interaction.selectedChoiceIndex]
     this.diagnostics.setStatus(`深掘り候補: ${choice.label}`)
+  }
+
+  private async selectPreviousDeepeningChoice() {
+    this.dispatch({ type: 'PREVIOUS_DEEPENING_CHOICE', choiceCount: deepeningChoices.length })
+    await this.renderDeepeningChoices()
+    const choice = deepeningChoices[this.state.interaction.selectedChoiceIndex]
+    this.diagnostics.setStatus(`深掘り候補: ${choice.label}`)
+  }
+
+  private async cancelDeepeningChoices() {
+    if (!this.lastWhisper) return
+    this.dispatch({ type: 'DEEPENING_CHOICES_CANCELLED' })
+    await this.showSafely([releaseLabel, '', this.lastWhisper].join('\n'))
+    this.scheduleAutoDismiss()
+    this.diagnostics.setStatus('深掘り候補を閉じました。')
   }
 
   private async confirmDeepeningChoice() {
@@ -256,7 +273,7 @@ export class AppController {
       '深掘りを選ぶ',
       ...choices,
       '',
-      '下:選ぶ  タップ:決定  上:閉じる',
+      '上下:選ぶ  タップ:決定  2回:戻る',
     ].join('\n'))
   }
 
@@ -304,22 +321,6 @@ export class AppController {
     }
   }
 
-  private async shutdown() {
-    this.generationToken += 1
-    this.autoDismiss.cancel()
-    this.onShutdown()
-    this.dispatch({ type: 'SHUTDOWN_STARTED' })
-    this.diagnostics.setStatus('G2画面を終了しています…')
-    try {
-      await this.display.shutdown()
-      this.dispatch({ type: 'SHUTDOWN_SUCCEEDED' })
-      this.diagnostics.setStatus('G2画面を終了しました。')
-    } catch (error) {
-      this.dispatch({ type: 'SHUTDOWN_FAILED', message: errorMessage(error) })
-      this.diagnostics.reportError(error)
-    }
-  }
-
   private dispatch(action: AppAction) {
     this.state = reduceAppState(this.state, action)
   }
@@ -328,7 +329,7 @@ export class AppController {
     if (!this.autoDismissEnabled) return
     this.autoDismiss.schedule(() => {
       if (this.state.status !== 'ready') return
-      if (!['primary', 'choices', 'deepened', 'next'].includes(this.state.interaction.phase)) return
+      if (!['primary', 'deepened', 'next'].includes(this.state.interaction.phase)) return
       void this.dismissDisplay()
     }, autoDismissDelayMs)
   }
