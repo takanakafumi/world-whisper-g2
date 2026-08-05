@@ -18,6 +18,7 @@ export interface ObservationRecord {
   receivedEventCount: number
   acceptedSampleCount: number
   ignoredEventCount: number
+  movementState: SamplingSessionState['movement']['state']
   totalDistanceMeters: number
   displacementMeters: number
   calculatedSpeedMetersPerSecond: number
@@ -65,6 +66,7 @@ export class ObservationLog {
       receivedEventCount: sampling.receivedEventCount,
       acceptedSampleCount: sampling.acceptedEventCount,
       ignoredEventCount: sampling.ignoredEventCount,
+      movementState: movement.state,
       totalDistanceMeters: movement.totalDistanceMeters,
       displacementMeters: movement.displacementMeters,
       calculatedSpeedMetersPerSecond: movement.speedMetersPerSecond,

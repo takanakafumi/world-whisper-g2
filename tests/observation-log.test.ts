@@ -44,6 +44,7 @@ test('records a labeled diagnostic snapshot with a deterministic schema', () => 
       receivedEventCount: 5,
       acceptedSampleCount: 4,
       ignoredEventCount: 1,
+      movementState: 'changed',
       totalDistanceMeters: 42.5,
       displacementMeters: 38.25,
       calculatedSpeedMetersPerSecond: 1.42,
