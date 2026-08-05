@@ -51,6 +51,7 @@ test('starts the SDK source once and consumes pushed snapshots', async () => {
 
   assert.equal(source.starts, 1)
   assert.equal(session.getState().receivedEventCount, 2)
+  assert.equal(session.getState().acceptedEventCount, 2)
   assert.equal(session.getState().movement.sampleCount, 2)
   assert.equal(session.getState().active, true)
 })
@@ -95,6 +96,7 @@ test('ignores duplicate and stale SDK timestamps', async () => {
   assert.equal(session.getState().movement.sampleCount, 1)
   assert.equal(session.getState().receivedEventCount, 3)
   assert.equal(session.getState().ignoredEventCount, 2)
+  assert.equal(session.getState().acceptedEventCount, 1)
   assert.equal(session.getState().latestCapturedAt, snapshot(5).capturedAt)
   assert.equal(session.getState().error, null)
 })
@@ -128,4 +130,5 @@ test('a restarted session begins with an empty timeline', async () => {
   await session.stop()
   await session.start()
   assert.equal(session.getState().movement.sampleCount, 0)
+  assert.equal(session.getState().acceptedEventCount, 0)
 })
