@@ -8,7 +8,7 @@ import type { WhisperGenerator } from '../whisper/whisper-generator.ts'
 import { AutoDismissTimer, type AutoDismissPort } from './auto-dismiss-timer.ts'
 import { initialAppState, reduceAppState, type AppAction, type AppState } from './state.ts'
 
-const releaseLabel = 'WORLD WHISPER v0.7.0'
+const releaseLabel = 'WORLD WHISPER v0.8.0'
 const clearedContent = '\u00a0'
 const autoDismissDelayMs = 5_000
 
@@ -139,6 +139,13 @@ export class AppController {
       this.scheduleAutoDismiss()
     }
     this.diagnostics.setStatus('5秒自動消灯を有効にしました。')
+  }
+
+  getState(): AppState {
+    return {
+      ...this.state,
+      interaction: { ...this.state.interaction },
+    }
   }
 
   private async handleSingleTap() {

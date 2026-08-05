@@ -6,6 +6,8 @@ import { ContextTimeline } from './context/context-timeline.ts'
 import { EvenHubContextProvider } from './context/even-hub-context-provider.ts'
 import { EvenHubContextUpdateSource } from './context/even-hub-context-update-source.ts'
 import { LocationDiagnosticsController } from './context/location-diagnostics-controller.ts'
+import { ObservationLog } from './context/observation-log.ts'
+import { ObservationLogController } from './context/observation-log-controller.ts'
 import { SamplingDiagnosticsController } from './context/sampling-diagnostics-controller.ts'
 import { SamplingSession } from './context/sampling-session.ts'
 import { DiagnosticsView } from './diagnostics/diagnostics-view.ts'
@@ -19,15 +21,23 @@ try {
   const bridge = await waitForEvenAppBridge()
   const contextProvider = new EvenHubContextProvider(bridge)
   let samplingDiagnostics: SamplingDiagnosticsController | null = null
+  let observationController: ObservationLogController | null = null
+  const observationLog = new ObservationLog()
   const samplingSession = new SamplingSession(new EvenHubContextUpdateSource(bridge), new ContextTimeline(), {
-    onChange: (state) => samplingDiagnostics?.render(state),
+    onChange: (state) => {
+      samplingDiagnostics?.render(state)
+      observationController?.renderSamplingState(state)
+    },
   })
   const controller = new AppController(
     new G2Display(bridge),
     diagnostics,
     contextProvider,
     new RuleBasedWhisperGenerator(),
-    () => samplingSession.stop(),
+    () => {
+      observationLog.clear()
+      void samplingSession.stop()
+    },
   )
   new LocationDiagnosticsController(
     '#location-diagnostic-button',
@@ -41,6 +51,17 @@ try {
     samplingSession,
   )
   samplingDiagnostics.start()
+  observationController = new ObservationLogController(
+    '#observation-label',
+    '#observation-record-button',
+    '#observation-copy-button',
+    '#observation-clear-button',
+    '#observation-log-status',
+    samplingSession,
+    observationLog,
+    () => controller.getState(),
+  )
+  observationController.start()
   new DevelopmentControls(
     '#trigger-notification-button',
     '#dismiss-display-button',
@@ -49,7 +70,10 @@ try {
   ).start()
 
   bridge.onEvenHubEvent((event) => void controller.handleEvenHubEvent(event))
-  window.addEventListener('pagehide', () => void samplingSession.stop(), { once: true })
+  window.addEventListener('pagehide', () => {
+    observationLog.clear()
+    void samplingSession.stop()
+  }, { once: true })
   await controller.start()
 } catch (error) {
   diagnostics.reportError(error)

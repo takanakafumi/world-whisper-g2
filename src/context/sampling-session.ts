@@ -7,6 +7,7 @@ export interface SamplingSessionState {
   transitioning: boolean
   movement: MovementContext
   receivedEventCount: number
+  acceptedEventCount: number
   ignoredEventCount: number
   latestCapturedAt: string | null
   latestAccuracyMeters: number | null
@@ -29,6 +30,7 @@ export class SamplingSession {
   private generation = 0
   private lastAcceptedTimestamp = Number.NEGATIVE_INFINITY
   private receivedEventCount = 0
+  private acceptedEventCount = 0
   private ignoredEventCount = 0
   private latestCapturedAt: string | null = null
   private latestAccuracyMeters: number | null = null
@@ -50,6 +52,7 @@ export class SamplingSession {
     this.timeline.clear()
     this.lastAcceptedTimestamp = Number.NEGATIVE_INFINITY
     this.receivedEventCount = 0
+    this.acceptedEventCount = 0
     this.ignoredEventCount = 0
     this.latestCapturedAt = null
     this.latestAccuracyMeters = null
@@ -109,6 +112,7 @@ export class SamplingSession {
         return
       }
       const movement = this.timeline.add(snapshot)
+      this.acceptedEventCount += 1
       this.lastAcceptedTimestamp = timestamp
       this.latestAccuracyMeters = snapshot.accuracyMeters
       this.error = null
@@ -134,6 +138,7 @@ export class SamplingSession {
       transitioning: this.transitioning,
       movement: { ...movement },
       receivedEventCount: this.receivedEventCount,
+      acceptedEventCount: this.acceptedEventCount,
       ignoredEventCount: this.ignoredEventCount,
       latestCapturedAt: this.latestCapturedAt,
       latestAccuracyMeters: this.latestAccuracyMeters,
