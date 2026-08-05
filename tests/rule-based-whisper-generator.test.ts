@@ -60,3 +60,14 @@ test('returns deterministic alternative perspectives', () => {
   )
 })
 
+test('generates distinct deterministic output for each deepening intent', () => {
+  const intents = ['background', 'alternative', 'reflection'] as const
+  const results = intents.map((deepenIntent) =>
+    generator.generate(snapshot(12), { deepenIntent }))
+
+  assert.equal(new Set(results).size, intents.length)
+  for (const result of results) {
+    assert.ok(Array.from(result).length <= MAX_WHISPER_CHARACTERS)
+  }
+})
+

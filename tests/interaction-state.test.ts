@@ -14,18 +14,21 @@ test('supports notification, primary, deepen, next, and dismiss transitions', ()
   assert.deepEqual(apply([{ type: 'NOTIFY' }]), {
     phase: 'notified',
     perspectiveIndex: 0,
+    selectedChoiceIndex: 0,
+    choiceReturnPhase: null,
   })
   assert.equal(apply([{ type: 'NOTIFY' }, { type: 'SHOW_PRIMARY' }]).phase, 'primary')
   assert.equal(apply([
     { type: 'NOTIFY' },
     { type: 'SHOW_PRIMARY' },
+    { type: 'OPEN_CHOICES' },
     { type: 'DEEPEN' },
   ]).phase, 'deepened')
   assert.deepEqual(apply([
     { type: 'NOTIFY' },
     { type: 'SHOW_PRIMARY' },
     { type: 'SHOW_NEXT' },
-  ]), { phase: 'next', perspectiveIndex: 1 })
+  ]), { phase: 'next', perspectiveIndex: 1, selectedChoiceIndex: 0, choiceReturnPhase: null })
   assert.equal(apply([{ type: 'NOTIFY' }, { type: 'DISMISS' }]).phase, 'dismissed')
 })
 
@@ -46,6 +49,34 @@ test('a new notification resets the perspective index', () => {
   assert.deepEqual(transitionInteraction(next, { type: 'NOTIFY' }), {
     phase: 'notified',
     perspectiveIndex: 0,
+    selectedChoiceIndex: 0,
+    choiceReturnPhase: null,
   })
+})
+
+test('cycles bounded deepening choices only while the menu is open', () => {
+  const choices = apply([
+    { type: 'NOTIFY' },
+    { type: 'SHOW_PRIMARY' },
+    { type: 'OPEN_CHOICES' },
+    { type: 'SELECT_NEXT_CHOICE', choiceCount: 3 },
+    { type: 'SELECT_NEXT_CHOICE', choiceCount: 3 },
+    { type: 'SELECT_NEXT_CHOICE', choiceCount: 3 },
+  ])
+
+  assert.equal(choices.phase, 'choices')
+  assert.equal(choices.selectedChoiceIndex, 0)
+})
+
+test('moves choices in both directions and cancel restores the prior phase', () => {
+  const choices = apply([
+    { type: 'NOTIFY' },
+    { type: 'SHOW_PRIMARY' },
+    { type: 'OPEN_CHOICES' },
+    { type: 'SELECT_PREVIOUS_CHOICE', choiceCount: 3 },
+  ])
+
+  assert.equal(choices.selectedChoiceIndex, 2)
+  assert.equal(transitionInteraction(choices, { type: 'CANCEL_CHOICES' }).phase, 'primary')
 })
 

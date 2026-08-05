@@ -19,6 +19,10 @@ export type AppAction =
   | { type: 'WHISPER_CANCELLED' }
   | { type: 'NOTIFICATION_TRIGGERED' }
   | { type: 'PRIMARY_SHOWN' }
+  | { type: 'DEEPENING_CHOICES_OPENED' }
+  | { type: 'NEXT_DEEPENING_CHOICE'; choiceCount: number }
+  | { type: 'PREVIOUS_DEEPENING_CHOICE'; choiceCount: number }
+  | { type: 'DEEPENING_CHOICES_CANCELLED' }
   | { type: 'DEEPENED' }
   | { type: 'NEXT_SHOWN' }
   | { type: 'DISPLAY_DISMISSED' }
@@ -55,6 +59,29 @@ export const reduceAppState = (state: AppState, action: AppAction): AppState => 
       return { ...state, interaction: transitionInteraction(state.interaction, { type: 'NOTIFY' }) }
     case 'PRIMARY_SHOWN':
       return { ...state, interaction: transitionInteraction(state.interaction, { type: 'SHOW_PRIMARY' }) }
+    case 'DEEPENING_CHOICES_OPENED':
+      return { ...state, interaction: transitionInteraction(state.interaction, { type: 'OPEN_CHOICES' }) }
+    case 'NEXT_DEEPENING_CHOICE':
+      return {
+        ...state,
+        interaction: transitionInteraction(state.interaction, {
+          type: 'SELECT_NEXT_CHOICE',
+          choiceCount: action.choiceCount,
+        }),
+      }
+    case 'PREVIOUS_DEEPENING_CHOICE':
+      return {
+        ...state,
+        interaction: transitionInteraction(state.interaction, {
+          type: 'SELECT_PREVIOUS_CHOICE',
+          choiceCount: action.choiceCount,
+        }),
+      }
+    case 'DEEPENING_CHOICES_CANCELLED':
+      return {
+        ...state,
+        interaction: transitionInteraction(state.interaction, { type: 'CANCEL_CHOICES' }),
+      }
     case 'DEEPENED':
       return { ...state, interaction: transitionInteraction(state.interaction, { type: 'DEEPEN' }) }
     case 'NEXT_SHOWN':
