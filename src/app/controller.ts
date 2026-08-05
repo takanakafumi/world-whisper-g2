@@ -8,7 +8,7 @@ import type { DeepenIntent, WhisperGenerator } from '../whisper/whisper-generato
 import { AutoDismissTimer, type AutoDismissPort } from './auto-dismiss-timer.ts'
 import { initialAppState, reduceAppState, type AppAction, type AppState } from './state.ts'
 
-const releaseLabel = 'WORLD WHISPER v0.9.0'
+const releaseLabel = 'WORLD WHISPER v0.9.1'
 const clearedContent = '\u00a0'
 const autoDismissDelayMs = 5_000
 
